@@ -27,7 +27,7 @@ load_dotenv()
 from config import STRIPE_CONFIG
 
 # Set up logging
-log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+log_level = os.getenv('LOG_LEVEL', 'DEBUG').upper()  # Changed to DEBUG for more detailed logs
 is_production = os.getenv('FLASK_ENV') == 'production'
 
 # Create logger first
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 if is_production:
     # Production logging configuration
     logging.basicConfig(
-        level=getattr(logging, log_level, logging.INFO),
+        level=getattr(logging, log_level, logging.DEBUG),  # Changed to DEBUG
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.StreamHandler(),  # Console output
@@ -44,7 +44,7 @@ if is_production:
             # logging.FileHandler('/app/logs/app.log')
         ]
     )
-    logger.info("Production logging configured")
+    logger.info("Production logging configured with DEBUG level")
 else:
     # Development logging configuration
     logging.basicConfig(
@@ -2747,16 +2747,18 @@ def confirm_payment():
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for production monitoring"""
+    logger.info("🏥 Health check endpoint called")
     try:
         # Check database connection
         db.session.execute('SELECT 1')
+        logger.info("✅ Health check passed - database connected")
         return jsonify({
             'status': 'healthy',
             'timestamp': datetime.now().isoformat(),
             'version': '1.0.0'
         }), 200
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
+        logger.error(f"❌ Health check failed: {str(e)}")
         return jsonify({
             'status': 'unhealthy',
             'error': str(e),
@@ -2767,6 +2769,16 @@ def create_tables():
     with app.app_context():
         db.create_all()
         logger.info("Database tables created successfully")
+
+# Add startup logging
+logger.info("🚀 Flask app initialization complete")
+logger.info("📊 App configuration:")
+logger.info(f"  - Flask Environment: {os.getenv('FLASK_ENV', 'development')}")
+logger.info(f"  - Debug Mode: {app.config.get('DEBUG', False)}")
+logger.info(f"  - Database URI: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...")
+logger.info(f"  - Upload Folder: {app.config.get('UPLOAD_FOLDER', 'Not set')}")
+logger.info(f"  - Max Content Length: {app.config.get('MAX_CONTENT_LENGTH', 'Not set')}")
+logger.info("✅ App is ready to serve requests!")
 
 if __name__ == '__main__':
     create_tables()
