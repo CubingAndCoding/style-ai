@@ -1,0 +1,286 @@
+/* Modern Navigation Styling */
+
+/* Header Styling */
+.modern-header {
+  --background: var(--background-primary) !important;
+  --color: var(--text-primary) !important;
+  --border-color: var(--border-color) !important;
+  background: var(--background-primary) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-md) !important;
+  border-bottom: none !important;
+  position: relative;
+}
+
+.modern-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-gradient-animated);
+  background-size: 600% 600%;
+  animation: gradientShift 6s ease-in-out infinite;
+}
+
+.modern-header ion-toolbar {
+  --background: transparent !important;
+  --color: var(--text-primary) !important;
+  --border-color: transparent !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  padding: var(--space-sm) var(--space-lg);
+}
+
+.modern-header ion-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.025em;
+}
+
+.modern-header ion-buttons {
+  gap: var(--space-sm);
+}
+
+.modern-header ion-button {
+  --background: transparent;
+  --color: var(--text-muted);
+  --border-radius: var(--radius-md);
+  --padding-start: var(--space-sm);
+  --padding-end: var(--space-sm);
+  --padding-top: var(--space-sm);
+  --padding-bottom: var(--space-sm);
+  margin: 0 var(--space-xs);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: visible;
+}
+
+.modern-header ion-button:hover {
+  --background: var(--background-tertiary);
+  --color: var(--text-primary);
+}
+
+.modern-header ion-button ion-icon {
+  font-size: 1.2rem;
+}
+
+/* Bottom Tab Bar Styling */
+.modern-tab-bar {
+  --background: var(--background-primary);
+  --border-color: var(--border-color);
+  box-shadow: var(--shadow-md);
+  border-top: 1px solid var(--border-color);
+  height: 60px;
+  padding: 0;
+}
+
+.modern-tab-bar ion-tab-button {
+  --background: transparent;
+  --color: var(--text-muted);
+  --color-selected: var(--accent-color);
+  --background-selected: transparent;
+  --border-radius: var(--radius-md);
+  --padding-start: var(--space-sm);
+  --padding-end: var(--space-sm);
+  --padding-top: var(--space-sm);
+  --padding-bottom: var(--space-sm);
+  margin: 0 var(--space-xs);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: visible;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-tab-bar ion-tab-button:hover {
+  --background: var(--background-tertiary);
+  --color: var(--text-primary);
+}
+
+/* Selected tab styling using Ionic's native classes */
+.modern-tab-bar ion-tab-button.tab-selected {
+  --color: var(--accent-color);
+  --background: rgba(102, 126, 234, 0.1);
+}
+
+.modern-tab-bar ion-tab-button[aria-selected="true"] {
+  --color: var(--accent-color);
+  --background: rgba(102, 126, 234, 0.1);
+}
+
+.modern-tab-bar ion-tab-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--primary-gradient);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  border-radius: var(--radius-md);
+}
+
+.modern-tab-bar ion-tab-button.tab-selected::before,
+.modern-tab-bar ion-tab-button[aria-selected="true"]::before {
+  opacity: 0.1;
+}
+
+.modern-tab-bar ion-icon {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  transition: all var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.modern-tab-bar ion-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all var(--transition-normal);
+  line-height: 1.0;
+  margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.modern-tab-bar ion-tab-button.tab-selected ion-icon,
+.modern-tab-bar ion-tab-button[aria-selected="true"] ion-icon {
+  transform: scale(1.1);
+}
+
+.modern-tab-bar ion-tab-button.tab-selected ion-label,
+.modern-tab-bar ion-tab-button[aria-selected="true"] ion-label {
+  font-weight: 700;
+}
+
+/* Tab Button Animations */
+@keyframes tabPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Gradient Animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.modern-tab-bar ion-tab-button:active {
+  animation: tabPulse 0.2s ease;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .modern-header {
+    --background: #1e2328 !important;
+    --color: var(--dark-text-primary);
+    --border-color: var(--dark-border-color);
+    background: #1e2328 !important;
+  }
+  
+  .modern-header ion-button:hover {
+    --background: var(--dark-background-tertiary);
+  }
+  
+  .modern-tab-bar {
+    --background: var(--dark-background-primary);
+    --border-color: var(--dark-border-color);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .modern-tab-bar ion-tab-button:hover {
+    --background: var(--dark-background-tertiary);
+    --color: var(--dark-text-primary);
+  }
+  
+  .modern-tab-bar ion-tab-button.tab-selected,
+  .modern-tab-bar ion-tab-button[aria-selected="true"] {
+    --background: rgba(102, 126, 234, 0.2);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modern-header ion-toolbar {
+    padding: var(--space-sm) var(--space-md);
+  }
+  
+  .modern-header ion-title {
+    font-size: var(--font-size-lg);
+  }
+  
+  .modern-tab-bar {
+    height: 60px;
+  }
+  
+  .modern-tab-bar ion-tab-button {
+    margin: 0 var(--space-xs);
+    --padding-start: var(--space-xs);
+    --padding-end: var(--space-xs);
+    --padding-top: var(--space-sm);
+    --padding-bottom: var(--space-sm);
+  }
+  
+  .modern-tab-bar ion-icon {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  
+  .modern-tab-bar ion-label {
+    font-size: 0.65rem;
+    line-height: 1.0;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-header ion-buttons {
+    gap: var(--space-xs);
+  }
+  
+  .modern-header ion-button {
+    --padding-start: var(--space-sm);
+    --padding-end: var(--space-sm);
+  }
+  
+  .modern-tab-bar {
+    height: 60px;
+  }
+  
+  .modern-tab-bar ion-tab-button {
+    margin: 0 2px;
+    --padding-top: var(--space-sm);
+    --padding-bottom: var(--space-sm);
+  }
+  
+  .modern-tab-bar ion-icon {
+    font-size: 1.0rem;
+    margin-bottom: 8px;
+  }
+  
+  .modern-tab-bar ion-label {
+    font-size: 0.6rem;
+    line-height: 1.0;
+  }
+}

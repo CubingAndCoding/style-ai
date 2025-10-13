@@ -1,0 +1,323 @@
+/* Stripe Payment Page Styles */
+
+.stripe-payment-page {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stripe-payment-content {
+  --background: transparent;
+}
+
+.stripe-payment-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Payment Header */
+.payment-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 30px;
+}
+
+.payment-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.payment-header p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Payment Form */
+.payment-form {
+  margin-bottom: 30px;
+}
+
+.payment-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px rgba(102, 126, 234, 0.15),
+    0 0 0 1px rgba(102, 126, 234, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+
+.payment-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.payment-title ion-icon {
+  font-size: 1.6rem;
+  color: #667eea;
+}
+
+/* Payment Summary */
+.payment-summary {
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.summary-item.total {
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+  padding-top: 12px;
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-weight: 700;
+}
+
+.summary-label {
+  font-size: 1rem;
+  color: white;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.summary-price {
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.summary-item.total .summary-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Card Element */
+.card-element-container {
+  margin-bottom: 25px;
+}
+
+.card-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+/* Stripe Card Element Styling */
+.StripeElement {
+  background: rgba(102, 126, 234, 0.05);
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.StripeElement:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.1);
+  color: white;
+}
+
+.StripeElement--focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  color: white;
+  outline: none;
+}
+
+.StripeElement--invalid {
+  border-color: #e53e3e;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15);
+}
+
+.StripeElement::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Payment Button */
+.payment-submit-button {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --color: white;
+  --border-radius: 12px;
+  --padding: 16px;
+  --font-weight: 600;
+  --font-size: 1.1rem;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.payment-submit-button:hover:not(.button-disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+}
+
+.payment-submit-button:disabled {
+  opacity: 0.7;
+  transform: none;
+}
+
+/* Security Notice */
+.payment-security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #666;
+  text-align: center;
+}
+
+.payment-security ion-icon {
+  font-size: 1rem;
+  color: #10dc60;
+}
+
+/* Payment Features */
+.payment-features {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 25px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.payment-features h3 {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.payment-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.payment-features li {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.payment-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10dc60;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stripe-payment-container {
+    padding: 15px;
+  }
+  
+  .payment-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .payment-header p {
+    font-size: 1rem;
+  }
+  
+  .payment-card {
+    border-radius: 16px;
+  }
+  
+  .payment-summary {
+    padding: 16px;
+  }
+  
+  .payment-features {
+    padding: 20px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .payment-card {
+    background: linear-gradient(135deg, rgba(26, 32, 44, 0.95) 0%, rgba(45, 55, 72, 0.95) 100%);
+    border-color: rgba(102, 126, 234, 0.3);
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(102, 126, 234, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .payment-title {
+    color: white;
+  }
+  
+  .summary-label {
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  .summary-price {
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  .card-label {
+    color: white;
+  }
+  
+  .payment-security {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .StripeElement {
+    background: rgba(102, 126, 234, 0.05);
+    color: white;
+  }
+  
+  .StripeElement:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+    color: white;
+  }
+  
+  .StripeElement--focus {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+    color: white;
+  }
+  
+  .StripeElement::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
