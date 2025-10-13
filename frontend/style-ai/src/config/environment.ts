@@ -26,7 +26,7 @@ export const ENV_CONFIG = {
   APP_VERSION: getEnvVar('VITE_APP_VERSION', '0.0.1'),
   
   // API Configuration
-  API_URL: getEnvVar('VITE_API_URL', 'http://localhost:5000'),
+  API_URL: getEnvVar('VITE_API_URL'),
   API_TIMEOUT: parseInt(getEnvVar('VITE_API_TIMEOUT', '10000'), 10),
   
   // Stripe Configuration

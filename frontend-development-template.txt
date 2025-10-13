@@ -1,0 +1,19 @@
+# Frontend Environment Variables Template for Local Development
+# Copy this to frontend/style-ai/.env.local for local development
+
+# Backend API URL (Local development)
+VITE_API_URL=http://localhost:5000
+
+# Stripe Configuration (Test Keys)
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key-here
+
+# App Configuration
+VITE_APP_NAME=Style AI (Dev)
+VITE_APP_VERSION=1.0.0-dev
+
+# Debug Settings (Enable for development)
+VITE_DEBUG_MODE=true
+VITE_ENABLE_CONSOLE_LOGS=true
+
+# API Timeout
+VITE_API_TIMEOUT=10000

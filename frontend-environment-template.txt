@@ -1,0 +1,19 @@
+# Frontend Environment Variables Template for Production
+# Copy this to frontend/style-ai/.env.production and fill in your actual values
+
+# Backend API URL (Update with your actual Railway backend URL)
+VITE_API_URL=https://your-backend-app.railway.app
+
+# Stripe Configuration (Production Keys)
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_your-stripe-publishable-key-here
+
+# App Configuration
+VITE_APP_NAME=Style AI
+VITE_APP_VERSION=1.0.0
+
+# Debug Settings (Set to false for production)
+VITE_DEBUG_MODE=false
+VITE_ENABLE_CONSOLE_LOGS=false
+
+# API Timeout
+VITE_API_TIMEOUT=10000
