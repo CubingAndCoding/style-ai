@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from models import db, User, SavedPrompt
+from sqlalchemy import text
 import cv2
 import numpy as np
 import base64
@@ -2751,7 +2752,7 @@ def health_check():
     logger.info("🏥 Health check endpoint called")
     try:
         # Check database connection
-        db.session.execute('SELECT 1')
+        db.session.execute(text('SELECT 1'))
         logger.info("✅ Health check passed - database connected")
         return jsonify({
             'status': 'healthy',
@@ -2776,7 +2777,7 @@ def create_tables():
             
             # Test database connection
             logger.info("🔍 Testing database connection...")
-            db.session.execute('SELECT 1')
+            db.session.execute(text('SELECT 1'))
             logger.info("✅ Database connection test passed")
             
     except Exception as e:
