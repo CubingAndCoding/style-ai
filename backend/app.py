@@ -30,6 +30,9 @@ from config import STRIPE_CONFIG
 log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
 is_production = os.getenv('FLASK_ENV') == 'production'
 
+# Create logger first
+logger = logging.getLogger(__name__)
+
 if is_production:
     # Production logging configuration
     logging.basicConfig(
@@ -49,8 +52,6 @@ else:
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     logger.info("Development logging configured")
-
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
