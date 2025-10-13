@@ -101,7 +101,8 @@
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
   text-align: center;
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: auto !important;
   min-height: auto !important;
@@ -114,10 +115,14 @@
 
 .image-label {
   font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--space-md);
   display: block;
+  text-align: center;
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid var(--border-color);
+  order: -1;
 }
 
 .image-preview {
@@ -129,11 +134,13 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   display: block !important;
+  flex: 1;
+  margin-top: var(--space-sm);
 }
 
 .image-placeholder {
   width: 100%;
-  height: calc(100% - var(--space-lg) * 3 / 2);
+  flex: 1;
   background: var(--background-tertiary);
   border-radius: var(--radius-md);
   display: flex;
@@ -144,6 +151,8 @@
   border: 2px dashed var(--border-color);
   padding: var(--space-md);
   box-sizing: border-box;
+  margin-top: var(--space-sm);
+  min-height: 200px;
 }
 
 /* Style Selection */

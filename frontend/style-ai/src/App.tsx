@@ -21,6 +21,7 @@ import GalleryPage from './pages/GalleryPage';
 import PaymentPage from './pages/PaymentPage';
 import StripePaymentPage from './pages/StripePaymentPage';
 import ConfigTest from './components/ConfigTest';
+import ProtectedRoute from './components/ProtectedRoute';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -90,19 +91,29 @@ const AppContent: React.FC = () => {
 
 const AppWithTabs: React.FC = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   
   // Hide tabs on payment pages
   const hideTabs = location.pathname === '/payment' || location.pathname === '/stripe-payment';
+
+  // Redirect unauthenticated users to login
+  if (!isAuthenticated && (location.pathname === '/' || location.pathname === '/camera' || location.pathname === '/gallery')) {
+    return <Redirect to="/login" />;
+  }
 
 
   return (
     <IonTabs>
       <IonRouterOutlet>
         <Route exact path="/camera">
-          <CameraPage />
+          <ProtectedRoute>
+            <CameraPage />
+          </ProtectedRoute>
         </Route>
         <Route exact path="/gallery">
-          <GalleryPage />
+          <ProtectedRoute>
+            <GalleryPage />
+          </ProtectedRoute>
         </Route>
         <Route exact path="/login">
           <LoginPage />
@@ -111,10 +122,14 @@ const AppWithTabs: React.FC = () => {
           <RegisterPage />
         </Route>
         <Route exact path="/payment">
-          <PaymentPage />
+          <ProtectedRoute>
+            <PaymentPage />
+          </ProtectedRoute>
         </Route>
         <Route exact path="/stripe-payment">
-          <StripePaymentPage />
+          <ProtectedRoute>
+            <StripePaymentPage />
+          </ProtectedRoute>
         </Route>
         <Route exact path="/config-test">
           <ConfigTest />
@@ -123,7 +138,7 @@ const AppWithTabs: React.FC = () => {
           <Redirect to="/camera" />
         </Route>
       </IonRouterOutlet>
-      {!hideTabs && (
+      {!hideTabs && isAuthenticated && (
         <IonTabBar slot="bottom" className="modern-tab-bar">
           <IonTabButton tab="camera" href="/camera">
             <IonIcon icon={camera} />
