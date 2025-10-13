@@ -2746,6 +2746,20 @@ def confirm_payment():
         db.session.rollback()
         return jsonify({'error': 'Failed to confirm payment'}), 500
 
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint for basic connectivity test"""
+    return jsonify({
+        'message': 'Style AI Backend is running!',
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'version': '1.0.0',
+        'endpoints': {
+            'health': '/health',
+            'api': '/api/*'
+        }
+    }), 200
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for production monitoring"""
