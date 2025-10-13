@@ -15,6 +15,7 @@ import requests
 from io import BytesIO
 import json
 from dotenv import load_dotenv
+import traceback
 # import google.generativeai as genai  # Old library - not needed anymore
 from collections import defaultdict, deque
 import time
@@ -2766,20 +2767,45 @@ def health_check():
         }), 500
 
 def create_tables():
-    with app.app_context():
-        db.create_all()
-        logger.info("Database tables created successfully")
+    logger.info("🗄️ Starting database initialization...")
+    try:
+        with app.app_context():
+            logger.info("📊 Creating database tables...")
+            db.create_all()
+            logger.info("✅ Database tables created successfully")
+            
+            # Test database connection
+            logger.info("🔍 Testing database connection...")
+            db.session.execute('SELECT 1')
+            logger.info("✅ Database connection test passed")
+            
+    except Exception as e:
+        logger.error(f"❌ Database initialization failed: {str(e)}")
+        logger.error(f"❌ Error type: {type(e).__name__}")
+        raise e
 
 # Add startup logging
-logger.info("🚀 Flask app initialization complete")
-logger.info("📊 App configuration:")
-logger.info(f"  - Flask Environment: {os.getenv('FLASK_ENV', 'development')}")
-logger.info(f"  - Debug Mode: {app.config.get('DEBUG', False)}")
-logger.info(f"  - Database URI: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...")
-logger.info(f"  - Upload Folder: {app.config.get('UPLOAD_FOLDER', 'Not set')}")
-logger.info(f"  - Max Content Length: {app.config.get('MAX_CONTENT_LENGTH', 'Not set')}")
-logger.info("✅ App is ready to serve requests!")
+try:
+    logger.info("🚀 Flask app initialization complete")
+    logger.info("📊 App configuration:")
+    logger.info(f"  - Flask Environment: {os.getenv('FLASK_ENV', 'development')}")
+    logger.info(f"  - Debug Mode: {app.config.get('DEBUG', False)}")
+    logger.info(f"  - Database URI: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...")
+    logger.info(f"  - Upload Folder: {app.config.get('UPLOAD_FOLDER', 'Not set')}")
+    logger.info(f"  - Max Content Length: {app.config.get('MAX_CONTENT_LENGTH', 'Not set')}")
+    
+    # Initialize database
+    logger.info("🔧 Initializing database...")
+    create_tables()
+    
+    logger.info("✅ App is ready to serve requests!")
+    
+except Exception as e:
+    logger.error(f"❌ App initialization failed: {str(e)}")
+    logger.error(f"❌ Error type: {type(e).__name__}")
+    import traceback
+    logger.error(f"❌ Traceback: {traceback.format_exc()}")
+    raise e
 
 if __name__ == '__main__':
-    create_tables()
     app.run(host='0.0.0.0', port=5000, debug=True) 
