@@ -18,13 +18,6 @@ export default defineConfig({
   // Vite automatically loads .env files and makes VITE_ prefixed variables
   // available via import.meta.env - no additional configuration needed
   
-  // Explicitly define environment variables
-  define: {
-    // This ensures environment variables are available at build time
-    __VITE_API_URL__: JSON.stringify(process.env.VITE_API_URL),
-    __VITE_STRIPE_PUBLISHABLE_KEY__: JSON.stringify(process.env.VITE_STRIPE_PUBLISHABLE_KEY),
-  },
-  
   // Production build configuration
   build: {
     outDir: 'dist',

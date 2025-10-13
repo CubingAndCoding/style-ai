@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev dependencies needed for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -18,6 +18,9 @@ RUN npm run build
 
 # Install serve globally to serve the built files
 RUN npm install -g serve
+
+# Remove dev dependencies to reduce image size
+RUN npm prune --omit=dev
 
 # Expose port (Railway will set PORT environment variable)
 EXPOSE 3000
