@@ -1,4 +1,5 @@
 import { Redirect, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import {
   IonApp,
   IonIcon,
@@ -22,6 +23,7 @@ import PaymentPage from './pages/PaymentPage';
 import StripePaymentPage from './pages/StripePaymentPage';
 import ConfigTest from './components/ConfigTest';
 import ProtectedRoute from './components/ProtectedRoute';
+import { APP_NAME } from './config/environment';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -59,6 +61,11 @@ setupIonicReact();
 
 const AppContent: React.FC = () => {
   const { isLoading } = useAuth();
+
+  // Set the document title dynamically using the environment variable
+  useEffect(() => {
+    document.title = APP_NAME || 'Style AI';
+  }, []);
 
   if (isLoading) {
     return (

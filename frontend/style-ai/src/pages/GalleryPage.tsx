@@ -118,15 +118,19 @@ const GalleryPage: React.FC = () => {
     setSelectedImage(null);
   };
 
-  const handleDownload = async () => {
-    if (!selectedImage) return;
+  const handleDownload = async (image: Image, event?: React.MouseEvent) => {
+    // Prevent modal from opening when download button is clicked
+    if (event) {
+      event.stopPropagation();
+    }
+    
     try {
-      const response = await axios.get(selectedImage.url, { responseType: 'blob' });
+      const response = await axios.get(image.url, { responseType: 'blob' });
       const blob = new Blob([response.data], { type: 'image/jpeg' }); // Assuming JPEG for now
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `image_${selectedImage.id}.jpg`; // Default to JPEG
+      a.download = `image_${image.id}.jpg`; // Default to JPEG
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -261,6 +265,13 @@ const GalleryPage: React.FC = () => {
                     <p className="image-date">
                       {new Date(image.timestamp).toLocaleDateString()}
                     </p>
+                    <button 
+                      className="download-btn"
+                      onClick={(e) => handleDownload(image, e)}
+                      title="Download image"
+                    >
+                      <IonIcon icon={downloadOutline} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -286,7 +297,7 @@ const GalleryPage: React.FC = () => {
 
         <IonModal isOpen={showModal} onDidDismiss={closeModal}>
           {selectedImage && (
-            <div className="modal-content">
+            <IonPage>
               <IonHeader>
                 <IonToolbar>
                   <IonTitle>{`Image from ${new Date(selectedImage.timestamp).toLocaleString()}`}</IonTitle>
@@ -297,22 +308,24 @@ const GalleryPage: React.FC = () => {
                   </IonButtons>
                 </IonToolbar>
               </IonHeader>
-              <div className="modal-image-container">
-                <img 
-                  src={selectedImage.url} 
-                  alt={`Full size: ${selectedImage.id}`}
-                  className="modal-image"
-                />
-              </div>
-              <div className="modal-actions">
-                <button className="modern-button" onClick={handleDownload}>
-                  <IonIcon icon={downloadOutline} /> Download
-                </button>
-                <button className="modern-button secondary" onClick={handleShare}>
-                  <IonIcon icon={shareOutline} /> Share
-                </button>
-              </div>
-            </div>
+              <IonContent className="modal-content">
+                <div className="modal-image-container">
+                  <img 
+                    src={selectedImage.url} 
+                    alt={`Full size: ${selectedImage.id}`}
+                    className="modal-image"
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button className="modern-button" onClick={() => handleDownload(selectedImage)}>
+                    <IonIcon icon={downloadOutline} /> Download
+                  </button>
+                  <button className="modern-button secondary" onClick={handleShare}>
+                    <IonIcon icon={shareOutline} /> Share
+                  </button>
+                </div>
+              </IonContent>
+            </IonPage>
           )}
         </IonModal>
       </IonContent>
