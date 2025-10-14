@@ -51,6 +51,19 @@ const GalleryPage: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
   const history = useHistory();
 
+  // Helper function to format timestamp
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   const handleLogout = () => {
     logout();
     setTimeout(() => {
@@ -146,7 +159,7 @@ const GalleryPage: React.FC = () => {
     if (!selectedImage) return;
     try {
       await navigator.share({
-        title: `Image from ${new Date(selectedImage.timestamp).toLocaleString()}`,
+        title: `Image from ${formatTimestamp(selectedImage.timestamp)}`,
         text: `Check out this cool image!`,
         url: selectedImage.url,
       });
@@ -254,7 +267,7 @@ const GalleryPage: React.FC = () => {
                   <div className="image-container">
                     <img
                       src={image.url}
-                      alt={`Image from ${new Date(image.timestamp).toLocaleString()}`}
+                      alt={`Image from ${formatTimestamp(image.timestamp)}`}
                       onError={(e) => {
                         console.error('Error loading image:', image.url);
                         setError(`Failed to load image: ${image.url}`);
@@ -300,7 +313,7 @@ const GalleryPage: React.FC = () => {
             <IonPage>
               <IonHeader>
                 <IonToolbar>
-                  <IonTitle>{`Image from ${new Date(selectedImage.timestamp).toLocaleString()}`}</IonTitle>
+                  <IonTitle>{`Image from ${formatTimestamp(selectedImage.timestamp)}`}</IonTitle>
                   <IonButtons slot="end">
                     <IonButton onClick={closeModal}>
                       <IonIcon icon={closeOutline} />
