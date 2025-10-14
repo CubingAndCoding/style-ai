@@ -366,6 +366,10 @@
 }
 
 /* Modal Styling */
+ion-modal ion-page {
+  position: relative;
+}
+
 .modal-content {
   --background: var(--background-secondary);
   padding: 0;
@@ -381,8 +385,7 @@
   justify-content: center;
   padding: 20px;
   background: white;
-  position: relative;
-  overflow-y: auto;
+  min-height: 0;
 }
 
 .modal-image {
@@ -406,7 +409,7 @@
   padding: 24px;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
   backdrop-filter: blur(10px);
-  z-index: 10;
+  z-index: 1000;
 }
 
 .modal-actions .modern-button {

@@ -316,15 +316,15 @@ const GalleryPage: React.FC = () => {
                     className="modal-image"
                   />
                 </div>
-                <div className="modal-actions">
-                  <button className="modern-button" onClick={() => handleDownload(selectedImage)}>
-                    <IonIcon icon={downloadOutline} /> Download
-                  </button>
-                  <button className="modern-button secondary" onClick={handleShare}>
-                    <IonIcon icon={shareOutline} /> Share
-                  </button>
-                </div>
               </IonContent>
+              <div className="modal-actions">
+                <button className="modern-button" onClick={() => handleDownload(selectedImage)}>
+                  <IonIcon icon={downloadOutline} /> Download
+                </button>
+                <button className="modern-button secondary" onClick={handleShare}>
+                  <IonIcon icon={shareOutline} /> Share
+                </button>
+              </div>
             </IonPage>
           )}
         </IonModal>
