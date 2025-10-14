@@ -2,7 +2,13 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "/frontend/style-ai/Dockerfile"
+    "dockerfilePath": "/frontend/style-ai/Dockerfile",
+    "buildArgs": {
+      "VITE_STRIPE_PUBLISHABLE_KEY": "${{VITE_STRIPE_PUBLISHABLE_KEY}}",
+      "VITE_API_URL": "${{VITE_API_URL}}",
+      "VITE_APP_NAME": "${{VITE_APP_NAME}}",
+      "VITE_APP_VERSION": "${{VITE_APP_VERSION}}"
+    }
   },
   "deploy": {
     "startCommand": "serve -s dist -l 3000",

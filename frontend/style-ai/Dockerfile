@@ -13,6 +13,19 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Build the application with environment variables
+# Vite needs these variables at build time to embed them in the static files
+ARG VITE_STRIPE_PUBLISHABLE_KEY
+ARG VITE_API_URL
+ARG VITE_APP_NAME
+ARG VITE_APP_VERSION
+
+# Set environment variables for the build process
+ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_APP_NAME=$VITE_APP_NAME
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
+
 # Build the application
 RUN npm run build
 
