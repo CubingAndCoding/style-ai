@@ -408,10 +408,8 @@ ion-modal ion-page {
   gap: 16px;
   justify-content: center;
   padding: 24px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  background: transparent;
   z-index: 1000;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .modal-actions .modern-button {
@@ -432,26 +430,26 @@ ion-modal ion-page {
 .modal-actions .modern-button:not(.secondary) {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  box-shadow: var(--shadow-md);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  border: none;
 }
 
 .modal-actions .modern-button:not(.secondary):hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
 }
 
 .modal-actions .modern-button.secondary {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   color: var(--text-primary);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: none;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
 }
 
 .modal-actions .modern-button.secondary:hover {
   background: rgba(255, 255, 255, 1);
-  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
 }
 
 /* Animations */
@@ -509,19 +507,19 @@ ion-modal ion-page {
   }
   
   .modal-actions {
-    background: rgba(45, 55, 72, 0.95);
-    border-top-color: rgba(255, 255, 255, 0.1);
+    background: transparent;
   }
   
   .modal-actions .modern-button.secondary {
-    background: rgba(45, 55, 72, 0.9);
+    background: rgba(45, 55, 72, 0.95);
     color: var(--text-primary);
-    border-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   }
   
   .modal-actions .modern-button.secondary:hover {
     background: rgba(45, 55, 72, 1);
-    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
   }
 }
 
