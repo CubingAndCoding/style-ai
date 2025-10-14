@@ -297,7 +297,7 @@ const GalleryPage: React.FC = () => {
 
         <IonModal isOpen={showModal} onDidDismiss={closeModal}>
           {selectedImage && (
-            <div className="modal-wrapper">
+            <IonPage>
               <IonHeader>
                 <IonToolbar>
                   <IonTitle>{`Image from ${new Date(selectedImage.timestamp).toLocaleString()}`}</IonTitle>
@@ -308,7 +308,7 @@ const GalleryPage: React.FC = () => {
                   </IonButtons>
                 </IonToolbar>
               </IonHeader>
-              <div className="modal-content">
+              <IonContent className="modal-content">
                 <div className="modal-image-container">
                   <img 
                     src={selectedImage.url} 
@@ -324,8 +324,8 @@ const GalleryPage: React.FC = () => {
                     <IonIcon icon={shareOutline} /> Share
                   </button>
                 </div>
-              </div>
-            </div>
+              </IonContent>
+            </IonPage>
           )}
         </IonModal>
       </IonContent>
