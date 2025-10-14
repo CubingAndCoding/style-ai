@@ -386,6 +386,7 @@ ion-modal ion-page {
   padding: 20px;
   background: white;
   min-height: 0;
+  height: 100%;
 }
 
 .modal-image {
@@ -407,9 +408,10 @@ ion-modal ion-page {
   gap: 16px;
   justify-content: center;
   padding: 24px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   z-index: 1000;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .modal-actions .modern-button {
@@ -507,7 +509,8 @@ ion-modal ion-page {
   }
   
   .modal-actions {
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    background: rgba(45, 55, 72, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.1);
   }
   
   .modal-actions .modern-button.secondary {
