@@ -366,9 +366,21 @@
 }
 
 /* Modal Styling */
+.modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-height: 80vh;
+  background: var(--background-secondary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
 .modal-content {
-  --background: var(--background-secondary);
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-image-container {
@@ -378,7 +390,7 @@
   padding: 20px;
   background: white;
   min-height: 200px;
-  max-height: 70vh;
+  flex: 1;
   overflow-y: auto;
 }
 
@@ -484,8 +496,8 @@
     border-color: #4a5568;
   }
   
-  .modal-content {
-    --background: var(--background-secondary);
+  .modal-wrapper {
+    background: var(--background-secondary);
   }
   
   .modal-image-container {
