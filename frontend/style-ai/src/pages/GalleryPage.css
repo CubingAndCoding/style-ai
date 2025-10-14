@@ -378,12 +378,15 @@
   padding: 20px;
   background: white;
   min-height: 200px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .modal-image {
   max-width: 100%;
   width: auto;
   height: auto;
+  max-height: 100%;
   object-fit: contain;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
