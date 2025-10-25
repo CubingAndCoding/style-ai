@@ -22,6 +22,7 @@ import GalleryPage from './pages/GalleryPage';
 import PaymentPage from './pages/PaymentPage';
 import StripePaymentPage from './pages/StripePaymentPage';
 import ApiDebugPage from './pages/ApiDebugPage';
+import ApiMethodTestPage from './pages/ApiMethodTestPage';
 import ConfigTest from './components/ConfigTest';
 import ProtectedRoute from './components/ProtectedRoute';
 import { APP_NAME } from './config/environment';
@@ -144,6 +145,9 @@ const AppWithTabs: React.FC = () => {
         </Route>
         <Route exact path="/api-debug">
           <ApiDebugPage />
+        </Route>
+        <Route exact path="/api-method-test">
+          <ApiMethodTestPage />
         </Route>
         <Route exact path="/">
           <Redirect to="/camera" />

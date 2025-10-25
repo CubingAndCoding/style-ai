@@ -1015,6 +1015,26 @@ def process_image(image_data, style_type="sketch"):
         raise e
 
 # Authentication endpoints
+@app.route('/auth/register', methods=['GET'])
+def register_get():
+    """Handle GET requests to registration endpoint with helpful error message"""
+    logger.warning("⚠️ GET request received on registration endpoint")
+    logger.warning("⚠️ Registration endpoint only accepts POST requests")
+    return jsonify({
+        'error': 'Method not allowed',
+        'message': 'Registration endpoint only accepts POST requests. Please use POST method with username, email, and password in the request body.',
+        'allowed_methods': ['POST'],
+        'example': {
+            'method': 'POST',
+            'url': '/auth/register',
+            'body': {
+                'username': 'your_username',
+                'email': 'your_email@example.com',
+                'password': 'your_password'
+            }
+        }
+    }), 405
+
 @app.route('/auth/register', methods=['POST'])
 def register():
     """Register a new user"""
