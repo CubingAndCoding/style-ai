@@ -67,67 +67,76 @@ app = Flask(__name__)
 @app.before_request
 def log_request_info():
     """Log all incoming requests with detailed information"""
-    logger.info("=" * 80)
-    logger.info(f"🔵 INCOMING REQUEST")
-    logger.info(f"   Method: {request.method}")
-    logger.info(f"   URL: {request.url}")
-    logger.info(f"   Path: {request.path}")
-    logger.info(f"   Remote Address: {request.remote_addr}")
-    logger.info(f"   User Agent: {request.headers.get('User-Agent', 'Unknown')}")
-    logger.info(f"   Content Type: {request.headers.get('Content-Type', 'Not specified')}")
-    logger.info(f"   Content Length: {request.headers.get('Content-Length', 'Not specified')}")
+    logger.info("=" * 100)
+    logger.info("🔵 INCOMING REQUEST")
+    logger.info("=" * 100)
+    logger.info(f"📍 Method: {request.method}")
+    logger.info(f"📍 URL: {request.url}")
+    logger.info(f"📍 Path: {request.path}")
+    logger.info(f"📍 Remote Address: {request.remote_addr}")
+    logger.info(f"📍 User Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logger.info(f"📍 Content Type: {request.headers.get('Content-Type', 'Not specified')}")
+    logger.info(f"📍 Content Length: {request.headers.get('Content-Length', 'Not specified')}")
     
     # Log headers (excluding sensitive ones)
     sensitive_headers = ['authorization', 'cookie', 'x-api-key']
     headers_to_log = {k: v for k, v in request.headers if k.lower() not in sensitive_headers}
     if headers_to_log:
-        logger.info(f"   Headers: {dict(headers_to_log)}")
+        logger.info(f"📍 Headers: {dict(headers_to_log)}")
     
-    # Log request data (for POST/PUT requests)
+    # Log request data (for POST/PUT requests) - MAKE THIS MORE PROMINENT
     if request.method in ['POST', 'PUT', 'PATCH']:
+        logger.info("=" * 100)
+        logger.info("📥 REQUEST INPUT DATA:")
+        logger.info("=" * 100)
         try:
             if request.is_json:
-                logger.info(f"   JSON Data: {request.get_json()}")
+                input_data = request.get_json()
+                logger.info(f"📥 JSON Input: {json.dumps(input_data, indent=2)}")
             elif request.form:
-                logger.info(f"   Form Data: {dict(request.form)}")
+                logger.info(f"📥 Form Input: {dict(request.form)}")
             elif request.files:
-                logger.info(f"   Files: {list(request.files.keys())}")
+                logger.info(f"📥 Files Input: {list(request.files.keys())}")
             else:
-                logger.info(f"   Raw Data: {request.get_data(as_text=True)[:500]}...")
+                raw_data = request.get_data(as_text=True)
+                logger.info(f"📥 Raw Input: {raw_data[:500]}...")
         except Exception as e:
-            logger.warning(f"   Could not log request data: {e}")
-    
-    logger.info("=" * 80)
+            logger.warning(f"📥 Could not log request data: {e}")
+        logger.info("=" * 100)
 
 @app.after_request
 def log_response_info(response):
     """Log all outgoing responses with detailed information"""
-    logger.info("=" * 80)
-    logger.info(f"🟢 OUTGOING RESPONSE")
-    logger.info(f"   Status Code: {response.status_code}")
-    logger.info(f"   Content Type: {response.content_type}")
-    logger.info(f"   Content Length: {response.content_length}")
+    logger.info("=" * 100)
+    logger.info("🟢 OUTGOING RESPONSE")
+    logger.info("=" * 100)
+    logger.info(f"📍 Status Code: {response.status_code}")
+    logger.info(f"📍 Content Type: {response.content_type}")
+    logger.info(f"📍 Content Length: {response.content_length}")
     
     # Log response headers
     headers_to_log = {k: v for k, v in response.headers if k.lower() not in ['set-cookie']}
     if headers_to_log:
-        logger.info(f"   Headers: {dict(headers_to_log)}")
+        logger.info(f"📍 Headers: {dict(headers_to_log)}")
     
-    # Log response data (truncated for large responses)
+    # Log response data - MAKE THIS MORE PROMINENT
+    logger.info("=" * 100)
+    logger.info("📤 RESPONSE OUTPUT DATA:")
+    logger.info("=" * 100)
     try:
         if response.is_json:
             response_data = response.get_json()
-            logger.info(f"   JSON Response: {response_data}")
+            logger.info(f"📤 JSON Response: {json.dumps(response_data, indent=2)}")
         else:
             response_text = response.get_data(as_text=True)
             if len(response_text) > 1000:
-                logger.info(f"   Response Data: {response_text[:1000]}... (truncated)")
+                logger.info(f"📤 Text Response: {response_text[:1000]}... (truncated)")
             else:
-                logger.info(f"   Response Data: {response_text}")
+                logger.info(f"📤 Text Response: {response_text}")
     except Exception as e:
-        logger.warning(f"   Could not log response data: {e}")
+        logger.warning(f"📤 Could not log response data: {e}")
     
-    logger.info("=" * 80)
+    logger.info("=" * 100)
     return response
 
 @app.errorhandler(Exception)
@@ -1010,9 +1019,10 @@ def process_image(image_data, style_type="sketch"):
 def register():
     """Register a new user"""
     logger.info("🚀 REGISTRATION ENDPOINT CALLED")
+    logger.info("=" * 100)
     try:
         data = request.get_json()
-        logger.info(f"📝 Registration data received: {data}")
+        logger.info(f"📝 Registration data received: {json.dumps(data, indent=2)}")
         
         username = data.get('username')
         email = data.get('email')
@@ -1056,7 +1066,11 @@ def register():
             'access_token': access_token,
             'user': user.to_dict()
         }
-        logger.info(f"📤 Sending response: {response_data}")
+        logger.info("=" * 100)
+        logger.info("📤 REGISTRATION RESPONSE:")
+        logger.info("=" * 100)
+        logger.info(f"📤 Response Data: {json.dumps(response_data, indent=2)}")
+        logger.info("=" * 100)
         return jsonify(response_data), 201
         
     except Exception as e:
@@ -1072,9 +1086,10 @@ def register():
 def login():
     """Login user"""
     logger.info("🚀 LOGIN ENDPOINT CALLED")
+    logger.info("=" * 100)
     try:
         data = request.get_json()
-        logger.info(f"📝 Login data received: {data}")
+        logger.info(f"📝 Login data received: {json.dumps(data, indent=2)}")
         
         username = data.get('username')
         password = data.get('password')
@@ -1115,7 +1130,11 @@ def login():
             'access_token': access_token,
             'user': user.to_dict()
         }
-        logger.info(f"📤 Sending response: {response_data}")
+        logger.info("=" * 100)
+        logger.info("📤 LOGIN RESPONSE:")
+        logger.info("=" * 100)
+        logger.info(f"📤 Response Data: {json.dumps(response_data, indent=2)}")
+        logger.info("=" * 100)
         return jsonify(response_data), 200
         
     except Exception as e:

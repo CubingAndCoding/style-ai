@@ -27,13 +27,16 @@ def test_registration():
         "password": TEST_PASSWORD
     }
     
+    print(f"📤 Sending POST request to: {url}")
+    print(f"📤 Request data: {json.dumps(data, indent=2)}")
+    
     try:
         response = requests.post(url, json=data, timeout=10)
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.json()}")
+        print(f"📥 Response Status: {response.status_code}")
+        print(f"📥 Response Data: {json.dumps(response.json(), indent=2)}")
         return response.status_code == 201
     except requests.exceptions.RequestException as e:
-        print(f"Request failed: {e}")
+        print(f"❌ Request failed: {e}")
         return False
 
 def test_login():
@@ -47,13 +50,16 @@ def test_login():
         "password": TEST_PASSWORD
     }
     
+    print(f"📤 Sending POST request to: {url}")
+    print(f"📤 Request data: {json.dumps(data, indent=2)}")
+    
     try:
         response = requests.post(url, json=data, timeout=10)
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.json()}")
+        print(f"📥 Response Status: {response.status_code}")
+        print(f"📥 Response Data: {json.dumps(response.json(), indent=2)}")
         return response.status_code == 200
     except requests.exceptions.RequestException as e:
-        print(f"Request failed: {e}")
+        print(f"❌ Request failed: {e}")
         return False
 
 def test_duplicate_registration():
