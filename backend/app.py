@@ -28,18 +28,21 @@ load_dotenv()
 # Now import config after loading environment variables
 from config import STRIPE_CONFIG
 
-# Set up logging
-log_level = os.getenv('LOG_LEVEL', 'DEBUG').upper()  # Changed to DEBUG for more detailed logs
+# Set up comprehensive logging
+log_level = os.getenv('LOG_LEVEL', 'DEBUG').upper()
 is_production = os.getenv('FLASK_ENV') == 'production'
 
 # Create logger first
 logger = logging.getLogger(__name__)
 
+# Configure logging with detailed format
+log_format = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+
 if is_production:
     # Production logging configuration
     logging.basicConfig(
-        level=getattr(logging, log_level, logging.DEBUG),  # Changed to DEBUG
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=getattr(logging, log_level, logging.DEBUG),
+        format=log_format,
         handlers=[
             logging.StreamHandler(),  # Console output
             # Add file handler for production if needed
@@ -51,11 +54,100 @@ else:
     # Development logging configuration
     logging.basicConfig(
         level=getattr(logging, log_level, logging.DEBUG),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format=log_format
     )
     logger.info("Development logging configured")
 
+# Set Flask app logger to DEBUG level
+logging.getLogger('werkzeug').setLevel(logging.DEBUG)
+
 app = Flask(__name__)
+
+# Add comprehensive request/response logging middleware
+@app.before_request
+def log_request_info():
+    """Log all incoming requests with detailed information"""
+    logger.info("=" * 80)
+    logger.info(f"🔵 INCOMING REQUEST")
+    logger.info(f"   Method: {request.method}")
+    logger.info(f"   URL: {request.url}")
+    logger.info(f"   Path: {request.path}")
+    logger.info(f"   Remote Address: {request.remote_addr}")
+    logger.info(f"   User Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logger.info(f"   Content Type: {request.headers.get('Content-Type', 'Not specified')}")
+    logger.info(f"   Content Length: {request.headers.get('Content-Length', 'Not specified')}")
+    
+    # Log headers (excluding sensitive ones)
+    sensitive_headers = ['authorization', 'cookie', 'x-api-key']
+    headers_to_log = {k: v for k, v in request.headers if k.lower() not in sensitive_headers}
+    if headers_to_log:
+        logger.info(f"   Headers: {dict(headers_to_log)}")
+    
+    # Log request data (for POST/PUT requests)
+    if request.method in ['POST', 'PUT', 'PATCH']:
+        try:
+            if request.is_json:
+                logger.info(f"   JSON Data: {request.get_json()}")
+            elif request.form:
+                logger.info(f"   Form Data: {dict(request.form)}")
+            elif request.files:
+                logger.info(f"   Files: {list(request.files.keys())}")
+            else:
+                logger.info(f"   Raw Data: {request.get_data(as_text=True)[:500]}...")
+        except Exception as e:
+            logger.warning(f"   Could not log request data: {e}")
+    
+    logger.info("=" * 80)
+
+@app.after_request
+def log_response_info(response):
+    """Log all outgoing responses with detailed information"""
+    logger.info("=" * 80)
+    logger.info(f"🟢 OUTGOING RESPONSE")
+    logger.info(f"   Status Code: {response.status_code}")
+    logger.info(f"   Content Type: {response.content_type}")
+    logger.info(f"   Content Length: {response.content_length}")
+    
+    # Log response headers
+    headers_to_log = {k: v for k, v in response.headers if k.lower() not in ['set-cookie']}
+    if headers_to_log:
+        logger.info(f"   Headers: {dict(headers_to_log)}")
+    
+    # Log response data (truncated for large responses)
+    try:
+        if response.is_json:
+            response_data = response.get_json()
+            logger.info(f"   JSON Response: {response_data}")
+        else:
+            response_text = response.get_data(as_text=True)
+            if len(response_text) > 1000:
+                logger.info(f"   Response Data: {response_text[:1000]}... (truncated)")
+            else:
+                logger.info(f"   Response Data: {response_text}")
+    except Exception as e:
+        logger.warning(f"   Could not log response data: {e}")
+    
+    logger.info("=" * 80)
+    return response
+
+@app.errorhandler(Exception)
+def log_exceptions(error):
+    """Log all exceptions with full traceback"""
+    logger.error("=" * 80)
+    logger.error(f"❌ EXCEPTION OCCURRED")
+    logger.error(f"   Error Type: {type(error).__name__}")
+    logger.error(f"   Error Message: {str(error)}")
+    logger.error(f"   Request URL: {request.url}")
+    logger.error(f"   Request Method: {request.method}")
+    logger.error("   Full Traceback:")
+    logger.error(traceback.format_exc())
+    logger.error("=" * 80)
+    
+    # Return a proper error response
+    return jsonify({
+        'error': 'Internal server error',
+        'message': str(error) if app.debug else 'An error occurred'
+    }), 500
 
 # Configure CORS with environment variable
 cors_origins = os.getenv('CORS_ORIGINS', '*')
@@ -917,78 +1009,121 @@ def process_image(image_data, style_type="sketch"):
 @app.route('/auth/register', methods=['POST'])
 def register():
     """Register a new user"""
+    logger.info("🚀 REGISTRATION ENDPOINT CALLED")
     try:
         data = request.get_json()
+        logger.info(f"📝 Registration data received: {data}")
+        
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
         
+        logger.info(f"📋 Extracted fields - Username: {username}, Email: {email}, Password: {'***' if password else 'None'}")
+        
         if not all([username, email, password]):
+            logger.warning("❌ Missing required fields")
             return jsonify({'error': 'Username, email, and password are required'}), 400
         
         # Check if user already exists
-        if User.query.filter_by(username=username).first():
+        logger.info(f"🔍 Checking if username '{username}' already exists...")
+        existing_user_by_username = User.query.filter_by(username=username).first()
+        if existing_user_by_username:
+            logger.warning(f"❌ Username '{username}' already exists")
             return jsonify({'error': 'Username already exists'}), 400
         
-        if User.query.filter_by(email=email).first():
+        logger.info(f"🔍 Checking if email '{email}' already exists...")
+        existing_user_by_email = User.query.filter_by(email=email).first()
+        if existing_user_by_email:
+            logger.warning(f"❌ Email '{email}' already exists")
             return jsonify({'error': 'Email already exists'}), 400
         
         # Create new user
+        logger.info("👤 Creating new user...")
         user = User(username=username, email=email)
         user.set_password(password)
         
+        logger.info("💾 Adding user to database...")
         db.session.add(user)
         db.session.commit()
         
+        logger.info("🔑 Creating access token...")
         # Create access token
         access_token = create_access_token(identity=user.id)
         
-        logger.info(f"New user registered: {username}")
-        return jsonify({
+        logger.info(f"✅ New user registered successfully: {username} (ID: {user.id})")
+        response_data = {
             'message': 'User registered successfully',
             'access_token': access_token,
             'user': user.to_dict()
-        }), 201
+        }
+        logger.info(f"📤 Sending response: {response_data}")
+        return jsonify(response_data), 201
         
     except Exception as e:
-        logger.error(f"Registration error: {str(e)}")
+        logger.error("❌ REGISTRATION ERROR OCCURRED")
+        logger.error(f"   Error Type: {type(e).__name__}")
+        logger.error(f"   Error Message: {str(e)}")
+        logger.error(f"   Full Traceback:")
+        logger.error(traceback.format_exc())
         db.session.rollback()
         return jsonify({'error': 'Registration failed'}), 500
 
 @app.route('/auth/login', methods=['POST'])
 def login():
     """Login user"""
+    logger.info("🚀 LOGIN ENDPOINT CALLED")
     try:
         data = request.get_json()
+        logger.info(f"📝 Login data received: {data}")
+        
         username = data.get('username')
         password = data.get('password')
         
+        logger.info(f"📋 Extracted fields - Username: {username}, Password: {'***' if password else 'None'}")
+        
         if not all([username, password]):
+            logger.warning("❌ Missing required fields")
             return jsonify({'error': 'Username and password are required'}), 400
         
         # Find user by username or email
+        logger.info(f"🔍 Searching for user with username/email: {username}")
         user = User.query.filter(
             (User.username == username) | (User.email == username)
         ).first()
         
-        if not user or not user.check_password(password):
+        if not user:
+            logger.warning(f"❌ User not found: {username}")
+            return jsonify({'error': 'Invalid credentials'}), 401
+        
+        logger.info(f"👤 User found: {user.username} (ID: {user.id})")
+        
+        if not user.check_password(password):
+            logger.warning(f"❌ Invalid password for user: {username}")
             return jsonify({'error': 'Invalid credentials'}), 401
         
         if not user.is_active:
+            logger.warning(f"❌ Account deactivated for user: {username}")
             return jsonify({'error': 'Account is deactivated'}), 401
         
         # Create access token
+        logger.info("🔑 Creating access token...")
         access_token = create_access_token(identity=user.id)
         
-        logger.info(f"User logged in: {user.username}")
-        return jsonify({
+        logger.info(f"✅ User logged in successfully: {user.username}")
+        response_data = {
             'message': 'Login successful',
             'access_token': access_token,
             'user': user.to_dict()
-        }), 200
+        }
+        logger.info(f"📤 Sending response: {response_data}")
+        return jsonify(response_data), 200
         
     except Exception as e:
-        logger.error(f"Login error: {str(e)}")
+        logger.error("❌ LOGIN ERROR OCCURRED")
+        logger.error(f"   Error Type: {type(e).__name__}")
+        logger.error(f"   Error Message: {str(e)}")
+        logger.error(f"   Full Traceback:")
+        logger.error(traceback.format_exc())
         return jsonify({'error': 'Login failed'}), 500
 
 @app.route('/auth/me', methods=['GET'])
@@ -2823,4 +2958,16 @@ except Exception as e:
     raise e
 
 if __name__ == '__main__':
+    logger.info("🚀 STARTING STYLE AI BACKEND SERVER")
+    logger.info("=" * 80)
+    logger.info("🔧 Server Configuration:")
+    logger.info(f"   Host: 0.0.0.0")
+    logger.info(f"   Port: 5000")
+    logger.info(f"   Debug Mode: True")
+    logger.info(f"   Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    logger.info(f"   Upload Folder: {app.config['UPLOAD_FOLDER']}")
+    logger.info(f"   Max Content Length: {app.config['MAX_CONTENT_LENGTH']}")
+    logger.info("=" * 80)
+    logger.info("📡 Server is ready to receive requests!")
+    logger.info("=" * 80)
     app.run(host='0.0.0.0', port=5000, debug=True) 

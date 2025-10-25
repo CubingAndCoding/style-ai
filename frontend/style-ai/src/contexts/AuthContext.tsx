@@ -92,11 +92,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
+      console.log('🔐 Attempting login with:', { username, API_URL });
+      
       const response = await axios.post(`${API_URL}/auth/login`, {
         username,
         password
       });
 
+      console.log('✅ Login response:', response.data);
       const { access_token, user: userData } = response.data;
       
       setToken(access_token);
@@ -104,20 +107,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('auth_token', access_token);
       
       return true;
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (error: any) {
+      console.error('❌ Login failed:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error headers:', error.response?.headers);
       return false;
     }
   };
 
   const register = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
+      console.log('📝 Attempting registration with:', { username, email, API_URL });
+      
       const response = await axios.post(`${API_URL}/auth/register`, {
         username,
         email,
         password
       });
 
+      console.log('✅ Registration response:', response.data);
       const { access_token, user: userData } = response.data;
       
       setToken(access_token);
@@ -125,8 +134,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('auth_token', access_token);
       
       return true;
-    } catch (error) {
-      console.error('Registration failed:', error);
+    } catch (error: any) {
+      console.error('❌ Registration failed:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error headers:', error.response?.headers);
       return false;
     }
   };

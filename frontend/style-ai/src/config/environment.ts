@@ -26,7 +26,7 @@ export const ENV_CONFIG = {
   APP_VERSION: getEnvVar('VITE_APP_VERSION', '0.0.1'),
   
   // API Configuration
-  API_URL: getEnvVar('VITE_API_URL'),
+  API_URL: getEnvVar('VITE_API_URL', 'https://style-ai-production.up.railway.app'),
   API_TIMEOUT: parseInt(getEnvVar('VITE_API_TIMEOUT', '10000'), 10),
   
   // Stripe Configuration
