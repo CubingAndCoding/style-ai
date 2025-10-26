@@ -113,7 +113,15 @@ def log_request_info():
 
 @app.after_request
 def log_response_info(response):
-    """Log all outgoing responses with detailed information"""
+    """Log all outgoing responses with detailed information and add CORS headers"""
+    # Add CORS headers manually as backup
+    if 'Access-Control-Allow-Origin' not in response.headers:
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, HEAD'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        logger.info("🔧 Manual CORS headers added as backup")
+    
     logger.info("=" * 100)
     logger.info("🟢 OUTGOING RESPONSE")
     logger.info("=" * 100)
@@ -181,12 +189,13 @@ if cors_origins and cors_origins != '*':
     CORS(app, origins=origins)
     logger.info(f"🔧 CORS configured with specific origins: {origins}")
 else:
-    # Allow all origins (for development)
+    # Allow all origins (for development and production)
     CORS(app, 
          origins="*",
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-         supports_credentials=True)
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+         supports_credentials=False,  # Set to False when using wildcard origins
+         max_age=86400)  # Cache preflight for 24 hours
     logger.info("🔧 CORS configured to allow all origins with all methods")
 
 # Database configuration
