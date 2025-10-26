@@ -78,6 +78,13 @@ def log_request_info():
     logger.info(f"📍 Content Type: {request.headers.get('Content-Type', 'Not specified')}")
     logger.info(f"📍 Content Length: {request.headers.get('Content-Length', 'Not specified')}")
     
+    # Special handling for OPTIONS requests (CORS preflight)
+    if request.method == 'OPTIONS':
+        logger.info("🔄 CORS PREFLIGHT REQUEST DETECTED")
+        logger.info(f"🔄 Origin: {request.headers.get('Origin', 'Not specified')}")
+        logger.info(f"🔄 Access-Control-Request-Method: {request.headers.get('Access-Control-Request-Method', 'Not specified')}")
+        logger.info(f"🔄 Access-Control-Request-Headers: {request.headers.get('Access-Control-Request-Headers', 'Not specified')}")
+    
     # Log headers (excluding sensitive ones)
     sensitive_headers = ['authorization', 'cookie', 'x-api-key']
     headers_to_log = {k: v for k, v in request.headers if k.lower() not in sensitive_headers}
@@ -113,6 +120,14 @@ def log_response_info(response):
     logger.info(f"📍 Status Code: {response.status_code}")
     logger.info(f"📍 Content Type: {response.content_type}")
     logger.info(f"📍 Content Length: {response.content_length}")
+    
+    # Special handling for OPTIONS responses (CORS preflight)
+    if request.method == 'OPTIONS':
+        logger.info("🔄 CORS PREFLIGHT RESPONSE")
+        logger.info(f"🔄 Access-Control-Allow-Origin: {response.headers.get('Access-Control-Allow-Origin', 'Not set')}")
+        logger.info(f"🔄 Access-Control-Allow-Methods: {response.headers.get('Access-Control-Allow-Methods', 'Not set')}")
+        logger.info(f"🔄 Access-Control-Allow-Headers: {response.headers.get('Access-Control-Allow-Headers', 'Not set')}")
+        logger.info(f"🔄 Access-Control-Max-Age: {response.headers.get('Access-Control-Max-Age', 'Not set')}")
     
     # Log response headers
     headers_to_log = {k: v for k, v in response.headers if k.lower() not in ['set-cookie']}
@@ -164,9 +179,15 @@ if cors_origins and cors_origins != '*':
     # Split comma-separated origins
     origins = [origin.strip() for origin in cors_origins.split(',')]
     CORS(app, origins=origins)
+    logger.info(f"🔧 CORS configured with specific origins: {origins}")
 else:
     # Allow all origins (for development)
-    CORS(app)
+    CORS(app, 
+         origins="*",
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         supports_credentials=True)
+    logger.info("🔧 CORS configured to allow all origins with all methods")
 
 # Database configuration
 # Handle both DATABASE_URL (Railway PostgreSQL) and SQLALCHEMY_DATABASE_URI
