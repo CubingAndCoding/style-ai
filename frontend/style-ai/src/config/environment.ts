@@ -4,18 +4,9 @@
 const isDevelopment = import.meta.env.DEV;
 const isProduction = import.meta.env.PROD;
 
-// Debug logging (always show in development, or when debug mode is enabled)
-if (isDevelopment || import.meta.env.VITE_DEBUG_MODE === 'true') {
-  console.log('🔧 Environment config loading...');
-  console.log('isDevelopment:', isDevelopment);
-  console.log('isProduction:', isProduction);
-  console.log('All import.meta.env:', import.meta.env);
-}
-
 // Helper function to get environment variables with fallbacks
 const getEnvVar = (key: string, fallback: string = ''): string => {
   const value = import.meta.env[key];
-  console.log(`🔍 Getting ${key}:`, value || 'NOT SET');
   return value || fallback;
 };
 
@@ -45,13 +36,3 @@ export const ENV_CONFIG = {
 export const API_URL = ENV_CONFIG.API_URL;
 export const STRIPE_PUBLISHABLE_KEY = ENV_CONFIG.STRIPE_PUBLISHABLE_KEY;
 export const APP_NAME = ENV_CONFIG.APP_NAME;
-
-// Always show the final configuration
-console.log('🎯 Final Environment Configuration:', {
-  API_URL: ENV_CONFIG.API_URL,
-  STRIPE_PUBLISHABLE_KEY: ENV_CONFIG.STRIPE_PUBLISHABLE_KEY ? '***SET***' : 'NOT SET',
-  APP_NAME: ENV_CONFIG.APP_NAME,
-  DEBUG_MODE: ENV_CONFIG.DEBUG_MODE,
-  IS_DEVELOPMENT: ENV_CONFIG.IS_DEVELOPMENT,
-  IS_PRODUCTION: ENV_CONFIG.IS_PRODUCTION,
-});

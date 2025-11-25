@@ -17,17 +17,6 @@ const SimpleEnvTest: React.FC = () => {
           {JSON.stringify(import.meta.env, null, 2)}
         </pre>
         
-        <h3>Test with console.log:</h3>
-        <p>Check browser console for environment variables</p>
-        <button onClick={() => {
-          console.log('=== ENVIRONMENT VARIABLES TEST ===');
-          console.log('import.meta.env:', import.meta.env);
-          console.log('VITE_STRIPE_PUBLISHABLE_KEY:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-          console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
-          console.log('All keys:', Object.keys(import.meta.env));
-        }}>
-          Log to Console
-        </button>
       </IonCardContent>
     </IonCard>
   );

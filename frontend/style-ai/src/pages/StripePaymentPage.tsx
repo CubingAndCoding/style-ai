@@ -114,7 +114,6 @@ const PaymentForm: React.FC<{
         }
       }
     } catch (error: any) {
-      console.error('Payment error:', error);
       onPaymentError(`Payment failed: ${error.message}`);
     } finally {
       setLoading(false);

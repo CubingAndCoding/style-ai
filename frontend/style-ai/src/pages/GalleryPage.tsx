@@ -84,7 +84,6 @@ const GalleryPage: React.FC = () => {
         setImages([]);
       }
     } catch (err) {
-      console.error('Error fetching images:', err);
       setError('Failed to load images. Please try again.');
     } finally {
       setLoading(false);
@@ -147,7 +146,6 @@ const GalleryPage: React.FC = () => {
       window.URL.revokeObjectURL(url);
       setError('Image downloaded successfully!');
     } catch (err) {
-      console.error('Error downloading image:', err);
       setError('Failed to download image.');
     }
   };
@@ -162,7 +160,6 @@ const GalleryPage: React.FC = () => {
       });
       setError('Image shared successfully!');
     } catch (err) {
-      console.error('Error sharing image:', err);
       setError('Failed to share image.');
     }
   };
@@ -266,7 +263,6 @@ const GalleryPage: React.FC = () => {
                       src={image.url}
                       alt={`Image from ${formatTimestamp(image.timestamp)}`}
                       onError={(e) => {
-                        console.error('Error loading image:', image.url);
                         setError(`Failed to load image: ${image.url}`);
                       }}
                     />

@@ -132,8 +132,6 @@ const CameraPage: React.FC = () => {
         
         // Refresh usage info after successful upload
         fetchUsageInfo();
-        
-        console.log('Image processed successfully');
       }
     } catch (error: any) {
       console.error('Error uploading image:', error);
@@ -159,7 +157,6 @@ const CameraPage: React.FC = () => {
     setUsageLoading(true);
     setUsageError(null);
     try {
-      console.log('Fetching usage info...');
       const response = await fetch(`${API_URL}/auth/usage-info`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -167,16 +164,11 @@ const CameraPage: React.FC = () => {
         }
       });
       
-      console.log('Usage info response:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('Usage info data:', data);
         setUsageInfo(data);
       } else {
-        console.error('Failed to fetch usage info:', response.status);
         const errorData = await response.json();
-        console.error('Error details:', errorData);
         setUsageError('Failed to load usage info');
       }
     } catch (error) {

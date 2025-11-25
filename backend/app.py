@@ -230,7 +230,7 @@ if database_url:
 else:
     # Fallback to SQLite or custom SQLALCHEMY_DATABASE_URI
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///style_ai.db')
-    logger.info(f"Using database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        logger.info("Using database from configuration")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
@@ -254,9 +254,7 @@ jwt = JWTManager(app)
 stripe.api_key = STRIPE_CONFIG["SECRET_KEY"]
 
 # Debug Stripe configuration
-logger.info(f"Stripe Secret Key loaded: {bool(STRIPE_CONFIG['SECRET_KEY'])}")
 if STRIPE_CONFIG["SECRET_KEY"]:
-    logger.info(f"Stripe Key starts with: {STRIPE_CONFIG['SECRET_KEY'][:7]}...")
     logger.info("✅ Stripe is properly configured!")
 else:
     logger.error("❌ STRIPE_SECRET_KEY not found in environment variables!")
@@ -376,13 +374,7 @@ rate_limit_storage = {
     'last_reset': time.time()    # Last time daily counter was reset
 }
 
-# Debug logging for API keys
-logger.info("=== AI API Configuration ===")
-logger.info(f"HUGGINGFACE_API_KEY: {'SET' if CINEMATIC_AI_CONFIG['HUGGINGFACE_API_KEY'] else 'NOT SET'}")
-logger.info(f"GOOGLE_API_KEY: {'SET' if CINEMATIC_AI_CONFIG['GOOGLE_API_KEY'] else 'NOT SET'}")
-logger.info(f"REPLICATE_API_KEY: {'SET' if CINEMATIC_AI_CONFIG['REPLICATE_API_KEY'] else 'NOT SET'}")
-logger.info(f"STABILITY_API_KEY: {'SET' if CINEMATIC_AI_CONFIG['STABILITY_API_KEY'] else 'NOT SET'}")
-logger.info("===========================")
+# API keys are loaded but not logged for security
 
 def check_rate_limit():
     """
@@ -2933,7 +2925,7 @@ def initialize_app():
         logger.info("📊 App configuration:")
         logger.info(f"  - Flask Environment: {os.getenv('FLASK_ENV', 'development')}")
         logger.info(f"  - Debug Mode: {app.config.get('DEBUG', False)}")
-        logger.info(f"  - Database URI: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...")
+        logger.info("  - Database: Configured")
         logger.info(f"  - Upload Folder: {app.config.get('UPLOAD_FOLDER', 'Not set')}")
         logger.info(f"  - Max Content Length: {app.config.get('MAX_CONTENT_LENGTH', 'Not set')}")
         
@@ -2992,7 +2984,7 @@ if __name__ == '__main__':
     logger.info(f"   Host: 0.0.0.0")
     logger.info(f"   Port: 5000")
     logger.info(f"   Debug Mode: True")
-    logger.info(f"   Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    logger.info("   Database: Configured")
     logger.info(f"   Upload Folder: {app.config['UPLOAD_FOLDER']}")
     logger.info(f"   Max Content Length: {app.config['MAX_CONTENT_LENGTH']}")
     logger.info("=" * 80)
