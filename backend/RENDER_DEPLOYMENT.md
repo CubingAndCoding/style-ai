@@ -73,15 +73,28 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ## Step 6: Initialize Database
 
-After first deployment, you may need to initialize the database schema:
+After first deployment, you **must** initialize the database schema:
 
 1. Go to your web service → **Shell** tab
-2. Run:
+2. Run one of these commands:
+
+   **Option A (Recommended - uses existing script):**
+   ```bash
+   python recreate_tables.py
+   ```
+
+   **Option B (Direct Python command):**
    ```bash
    python -c "from app import app, db; app.app_context().push(); db.create_all()"
    ```
 
-Or if you have migration scripts, run them in the Shell.
+3. You should see output confirming tables were created:
+   ```
+   ✅ Tables created
+   ✅ Found 3 tables: users, saved_prompts, processed_images
+   ```
+
+**Important:** The database will be empty initially. If you need to migrate existing data, you'll need to export from your local database and import to Render's PostgreSQL.
 
 ## Step 7: Verify Deployment
 
