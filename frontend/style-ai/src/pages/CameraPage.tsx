@@ -195,6 +195,34 @@ const CameraPage: React.FC = () => {
     setProcessedImage(null);
   };
 
+  const saveImageToDevice = async () => {
+    if (!processedImage) {
+      showToastMessage('No processed image to save', 'danger');
+      return;
+    }
+
+    try {
+      // Fetch the image as a blob
+      const response = await axios.get(processedImage, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'image/jpeg' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a download link
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `enhanced-image-${Date.now()}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      showToastMessage('Image saved to your device!', 'success');
+    } catch (error) {
+      console.error('Error saving image:', error);
+      showToastMessage('Failed to save image', 'danger');
+    }
+  };
+
 
   const handleLogout = () => {
     logout();
@@ -319,14 +347,24 @@ const CameraPage: React.FC = () => {
           {/* Action Buttons */}
           {selectedImage && (
             <div className="actions-section">
-              <button
-                className="modern-button action-button"
-                onClick={uploadImage}
-                disabled={loading}
-              >
-                <IonIcon icon={sparklesOutline} />
-                {loading ? 'Enhancing...' : 'Enhance Image'}
-              </button>
+              {!processedImage ? (
+                <button
+                  className="modern-button action-button"
+                  onClick={uploadImage}
+                  disabled={loading}
+                >
+                  <IonIcon icon={sparklesOutline} />
+                  {loading ? 'Enhancing...' : 'Enhance Image'}
+                </button>
+              ) : (
+                <button
+                  className="modern-button action-button"
+                  onClick={saveImageToDevice}
+                >
+                  <IonIcon icon={saveOutline} />
+                  Save to Device
+                </button>
+              )}
               
               <button
                 className="modern-button action-button secondary"

@@ -38,13 +38,16 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
 
-# Expose port (Railway will set PORT automatically)
+# Expose port (Railway will set PORT automatically via environment variable)
+# Default to 5000 if PORT not set (for local testing)
 EXPOSE 5000
 
-# Health check
+# Health check (uses default port, Railway will override with startCommand)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
 # Run the application with gunicorn
+# Note: Railway will override this with startCommand from railway.json which uses $PORT
+# This is just a fallback for local Docker runs
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
 

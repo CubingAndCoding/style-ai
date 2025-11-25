@@ -1,8 +1,8 @@
-# 🚀 Google Gemini 2.0 Flash Preview Image Generation Setup Guide
+# 🚀 Google Gemini 2.5 Flash Image Preview Setup Guide
 
-## **Get the Same Amazing Results with Gemini 2.0 Flash Preview Image Generation!**
+## **Get the Same Amazing Results with Gemini 2.5 Flash Image Preview Generation!**
 
-Your Style AI app now uses Google Gemini 2.0 Flash Preview Image Generation with built-in rate limiting for optimal performance and cost management.
+Your Style AI app now uses Google Gemini 2.5 Flash Image Preview generation with built-in rate limiting for optimal performance and cost management.
 
 ## **Step 1: Get Your Google Gemini API Key**
 
@@ -13,10 +13,14 @@ Your Style AI app now uses Google Gemini 2.0 Flash Preview Image Generation with
 
 ## **Step 2: Add to Your .env File**
 
-In your `backend` folder, add this line to your `.env` file:
+In your `backend` folder, add **one** of these lines to your `.env` file:
 
 ```env
+# Legacy variable name (still supported)
 GOOGLE_API_KEY=AIzaSyC...your_actual_key_here...
+
+# Recommended Vertex AI name
+GOOGLE_CLOUD_API_KEY=AIzaSyC...your_actual_key_here...
 ```
 
 ## **Step 3: Restart Your Backend**
@@ -25,7 +29,7 @@ Restart your Flask server to load the new API key.
 
 ## **What You'll Get:**
 
-✅ **Gemini 2.0 Flash Preview Image Generation**: Latest model with enhanced image generation capabilities  
+✅ **Gemini 2.5 Flash Image Preview**: Latest multimodal model with image + text streaming  
 ✅ **Rate Limiting**: Built-in protection against API overuse (10 requests/minute, 200,000/day)  
 ✅ **No More Static/Noise**: Professional, clean enhancements  
 ✅ **Cinematic Storytelling**: Your photos will truly "hold a thousand words"  
@@ -41,7 +45,7 @@ Restart your Flask server to load the new API key.
 
 ## **Rate Limiting & Monitoring:**
 
-Your app now includes built-in rate limiting based on Gemini 2.0 Flash Preview Image Generation limits:
+Your app now includes built-in rate limiting based on Gemini 2.5 Flash Image Preview limits:
 - **10 requests per minute**
 - **200,000 requests per day**
 - **100 tokens per request**
@@ -54,10 +58,10 @@ Your app now includes built-in rate limiting based on Gemini 2.0 Flash Preview I
 ## **Console Output You'll See:**
 
 ```
-INFO: === GEMINI 2.0 FLASH PREVIEW IMAGE GENERATION CALL STARTED ===
-INFO: Using Google Gemini 2.0 Flash Preview Image Generation for image enhancement!
+INFO: === GEMINI 2.5 FLASH IMAGE PREVIEW STARTED ===
+INFO: Using Google Gemini 2.5 Flash Image Preview for cinematic enhancement!
 INFO: API call recorded. Minute: 3/10, Daily: 45/200000
-INFO: Gemini 2.0 Flash Preview Image Generation API call completed successfully!
+INFO: Gemini 2.5 Flash Image Preview API call completed successfully!
 INFO: Gemini response: This image shows a person in a contemplative mood...
 INFO: Applied professional cinematic lighting based on Gemini analysis
 INFO: Applied emotional enhancement based on Gemini analysis

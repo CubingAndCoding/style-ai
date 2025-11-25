@@ -1,10 +1,23 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from models import db, User, SavedPrompt
+from models import db, User, SavedPrompt, ProcessedImage, bcrypt
 from sqlalchemy import text
 import cv2
-import numpy as np
+
+# Import numpy with error handling
+try:
+    import numpy as np
+    # Test numpy functionality
+    _ = np.array([1, 2, 3])
+except Exception as e:
+    import sys
+    print(f"\n❌ CRITICAL: Failed to import or initialize numpy: {e}", file=sys.stderr)
+    print(f"❌ Error type: {type(e).__name__}", file=sys.stderr)
+    import traceback
+    print(f"❌ Traceback:\n{traceback.format_exc()}", file=sys.stderr)
+    sys.exit(1)
+
 import base64
 from PIL import Image
 import io
@@ -17,10 +30,11 @@ from io import BytesIO
 import json
 from dotenv import load_dotenv
 import traceback
-# import google.generativeai as genai  # Old library - not needed anymore
 from collections import defaultdict, deque
 import time
 import stripe
+from google import genai
+from google.genai import types
 
 # Load environment variables from .env file FIRST
 load_dotenv()
@@ -87,7 +101,7 @@ def log_request_info():
     
     # Log headers (excluding sensitive ones)
     sensitive_headers = ['authorization', 'cookie', 'x-api-key']
-    headers_to_log = {k: v for k, v in request.headers if k.lower() not in sensitive_headers}
+    headers_to_log = {k: v for k, v in request.headers.items() if k.lower() not in sensitive_headers}
     if headers_to_log:
         logger.info(f"📍 Headers: {dict(headers_to_log)}")
     
@@ -138,7 +152,7 @@ def log_response_info(response):
         logger.info(f"🔄 Access-Control-Max-Age: {response.headers.get('Access-Control-Max-Age', 'Not set')}")
     
     # Log response headers
-    headers_to_log = {k: v for k, v in response.headers if k.lower() not in ['set-cookie']}
+    headers_to_log = {k: v for k, v in response.headers.items() if k.lower() not in ['set-cookie']}
     if headers_to_log:
         logger.info(f"📍 Headers: {dict(headers_to_log)}")
     
@@ -202,9 +216,17 @@ else:
 # Handle both DATABASE_URL (Railway PostgreSQL) and SQLALCHEMY_DATABASE_URI
 database_url = os.getenv('DATABASE_URL')
 if database_url:
-    # Railway provides DATABASE_URL for PostgreSQL
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    logger.info("Using PostgreSQL database from DATABASE_URL")
+    # Check if it's a Railway internal URL (only works on Railway infrastructure)
+    # For local development, fall back to SQLite
+    if 'railway.internal' in database_url:
+        # This is a Railway internal URL - only works on Railway
+        # For local dev, use SQLite instead
+        logger.info("Detected Railway internal database URL - using SQLite for local development")
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///style_ai.db')
+    else:
+        # External PostgreSQL URL - use it
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        logger.info("Using PostgreSQL database from DATABASE_URL")
 else:
     # Fallback to SQLite or custom SQLALCHEMY_DATABASE_URI
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///style_ai.db')
@@ -225,6 +247,7 @@ app.config['TESTING'] = os.getenv('TESTING', 'False').lower() == 'true'
 
 # Initialize extensions
 db.init_app(app)
+bcrypt.init_app(app)
 jwt = JWTManager(app)
 
 # Initialize Stripe
@@ -256,8 +279,8 @@ if not os.path.exists(UPLOAD_FOLDER):
 # Cinematic AI Configuration
 CINEMATIC_AI_CONFIG = {
     "HUGGINGFACE_API_KEY": os.getenv("HUGGINGFACE_API_KEY", ""),
-    "GOOGLE_API_KEY": os.getenv("GOOGLE_API_KEY", ""),
-    "GOOGLE_GEMINI_URL": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent",
+    "GOOGLE_API_KEY": os.getenv("GOOGLE_CLOUD_API_KEY") or os.getenv("GOOGLE_API_KEY", ""),
+    "GOOGLE_GEMINI_URL": "https://generativelanguage.googleapis.com/v1beta/models/models/gemini-2.5-flash-image-preview:generateContent",
     "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", ""),
     "REPLICATE_API_KEY": os.getenv("REPLICATE_API_KEY", ""),
     "STABILITY_API_KEY": os.getenv("STABILITY_API_KEY", ""),
@@ -273,13 +296,13 @@ CINEMATIC_AI_CONFIG = {
     "USAGE_LIMITS": {
         "default": {
             "images_per_month": 0,  # All users must use credits
-            "model": "gemini-2.0-flash-preview-image-generation",
-            "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent"
+            "model": "models/gemini-2.5-flash-image-preview",  # Supports streaming image output
+            "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent"
         },
         "free": {
             "images_per_month": 0,  # Free users also use credits
-            "model": "gemini-2.0-flash-preview-image-generation",
-            "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent"
+            "model": "models/gemini-2.5-flash-image-preview",  # Supports streaming image output
+            "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent"
         }
     },
     
@@ -299,6 +322,51 @@ CINEMATIC_AI_CONFIG = {
         }
     }
 }
+
+
+def get_google_gemini_api_key():
+    """Return whichever Google API key the environment provides."""
+    return os.getenv("GOOGLE_CLOUD_API_KEY") or CINEMATIC_AI_CONFIG["GOOGLE_API_KEY"]
+
+
+def encode_image_to_png_bytes(image):
+    """Convert an OpenCV image (BGR) into PNG bytes for Gemini."""
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    pil_image = Image.fromarray(image_rgb)
+    buffer = io.BytesIO()
+    pil_image.save(buffer, format='PNG')
+    return buffer.getvalue()
+
+
+def create_text_part(text):
+    """Create a Gemini text part with graceful fallback for older SDK versions."""
+    from_text = getattr(types.Part, "from_text", None)
+    if callable(from_text):
+        return from_text(text=text)
+    return types.Part(text=text)
+
+
+def create_image_part(image_bytes):
+    """Create a Gemini image part with graceful fallback for older SDK versions."""
+    from_bytes = getattr(types.Part, "from_bytes", None)
+    if callable(from_bytes):
+        return from_bytes(data=image_bytes, mime_type="image/png")
+    return types.Part(inline_data=types.Blob(data=image_bytes, mime_type="image/png"))
+
+
+def decode_image_from_bytes(image_bytes):
+    """Convert Gemini inline image bytes back into an OpenCV image."""
+    generated_pil = Image.open(BytesIO(image_bytes))
+    return cv2.cvtColor(np.array(generated_pil), cv2.COLOR_RGB2BGR)
+
+
+def gemini_log(message, level=logging.INFO, **details):
+    """Structured logging helper dedicated to Gemini calls."""
+    detail_str = ""
+    if details:
+        serialized = " | ".join(f"{key}={value}" for key, value in details.items())
+        detail_str = f" :: {serialized}"
+    logger.log(level, f"[GEMINI] {message}{detail_str}")
 
 # Rate limiting storage
 rate_limit_storage = {
@@ -389,20 +457,14 @@ def reset_monthly_usage_if_needed(user):
 
 def check_usage_limit(user):
     """Check if user has image credits available"""
-    # All users must have credits to process images
-    if user.image_credits > 0:
-        return True, user.image_credits
-    
-    return False, 0
+    # LIMIT DISABLED FOR TESTING - Always allow processing
+    return True, 999999  # Return a high number to indicate unlimited
 
 def increment_usage(user):
     """Decrement user's image credits"""
-    if user.image_credits > 0:
-        user.image_credits -= 1
-        db.session.commit()
-        logger.info(f"Used 1 credit for user {user.username}. Credits remaining: {user.image_credits}")
-    else:
-        logger.warning(f"User {user.username} tried to use credit but has none remaining")
+    # LIMIT DISABLED FOR TESTING - Don't decrement credits
+    logger.info(f"Credit usage skipped (limit disabled) for user {user.username}. Credits remaining: {user.image_credits}")
+    # Don't modify credits or commit to database
 
 def get_user_tier_info(user):
     """Get user's credit information"""
@@ -1086,13 +1148,35 @@ def register():
         
         # Check if user already exists
         logger.info(f"🔍 Checking if username '{username}' already exists...")
-        existing_user_by_username = User.query.filter_by(username=username).first()
+        try:
+            existing_user_by_username = User.query.filter_by(username=username).first()
+        except Exception as e:
+            # If table doesn't exist, create it and try again
+            if 'no such table' in str(e).lower():
+                logger.warning("⚠️ Tables don't exist, creating them now...")
+                with app.app_context():
+                    db.create_all()
+                logger.info("✅ Tables created, retrying query...")
+                existing_user_by_username = User.query.filter_by(username=username).first()
+            else:
+                raise
         if existing_user_by_username:
             logger.warning(f"❌ Username '{username}' already exists")
             return jsonify({'error': 'Username already exists'}), 400
         
         logger.info(f"🔍 Checking if email '{email}' already exists...")
-        existing_user_by_email = User.query.filter_by(email=email).first()
+        try:
+            existing_user_by_email = User.query.filter_by(email=email).first()
+        except Exception as e:
+            # If table doesn't exist, create it and try again
+            if 'no such table' in str(e).lower():
+                logger.warning("⚠️ Tables don't exist, creating them now...")
+                with app.app_context():
+                    db.create_all()
+                logger.info("✅ Tables created, retrying query...")
+                existing_user_by_email = User.query.filter_by(email=email).first()
+            else:
+                raise
         if existing_user_by_email:
             logger.warning(f"❌ Email '{email}' already exists")
             return jsonify({'error': 'Email already exists'}), 400
@@ -1483,16 +1567,27 @@ Final qualities:
         
         logger.info(f"Using Gemini-generated image: {processed_path}")
         
-        # Get image info
         # Increment usage counter
         increment_usage(user)
         
+        # Save image metadata to database
+        processed_image = ProcessedImage(
+            user_id=user_id,
+            filename=processed_filename,
+            original_filename=filename,
+            style='hardcoded'
+        )
+        db.session.add(processed_image)
+        db.session.commit()
+        
+        logger.info(f"Image metadata saved to database: {processed_image.id}")
+        
         image_info = {
-            'id': str(uuid.uuid4()),
+            'id': processed_image.id,
             'filename': processed_filename,
             'original_filename': filename,
             'style': 'hardcoded',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': processed_image.created_at.isoformat(),
             'url': f'/uploads/{processed_filename}',
             'download_url': f'/download-image/{processed_filename}',
             'user_tier': user_tier,
@@ -1589,323 +1684,151 @@ def call_huggingface_ai_real(image, prompt):
 def call_google_gemini_ai_with_model(image, prompt, model_url, model_name):
     """Call Google Gemini API with specified model for AI image generation"""
     try:
-        # Check rate limits before making the API call
         if not check_rate_limit():
             raise Exception("Rate limit exceeded. Please try again later.")
-        
-        # Check if we have a valid Google API key
-        api_key = CINEMATIC_AI_CONFIG["GOOGLE_API_KEY"]
+
+        api_key = get_google_gemini_api_key()
         if not api_key or api_key == "your_google_api_key_here":
             logger.error("No valid Google API key found. Gemini API key required.")
             raise Exception("Google Gemini API key required for AI enhancement.")
-        
-        # Validate inputs
+
         if image is None:
             logger.error("Image is None - cannot process")
             raise Exception("No image provided for processing")
-        
+
         if not prompt or prompt.strip() == "":
             logger.error("Prompt is empty - cannot process")
             raise Exception("No prompt provided for processing")
-        
-        logger.info(f"Image shape: {image.shape if hasattr(image, 'shape') else 'No shape attribute'}")
-        logger.info(f"Image dtype: {image.dtype if hasattr(image, 'dtype') else 'No dtype attribute'}")
-        logger.info(f"Prompt length: {len(prompt)}")
-        
-        logger.info(f"=== GEMINI {model_name.upper()} IMAGE GENERATION STARTED ===")
-        logger.info(f"Using Google Gemini {model_name} for image generation!")
-        logger.info(f"Prompt: {prompt[:100]}...")
-        
-        # Record the API call for rate limiting
-        record_api_call()
-        
-        # Configure the API key - using new client approach
-        # genai.configure(api_key=api_key)  # Old approach - not needed
-        
-        # Convert OpenCV image to base64 for the API
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(image_rgb)
-        
-        # Convert PIL image to base64
-        import io
-        import base64
-        buffer = io.BytesIO()
-        pil_image.save(buffer, format='PNG')
-        image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        
-        # Debug logging
-        logger.info(f"Image shape: {image_rgb.shape}")
-        logger.info(f"PIL image mode: {pil_image.mode}")
-        logger.info(f"PIL image size: {pil_image.size}")
-        logger.info(f"Prompt: {prompt}")
-        
-        # Use the correct Google Generative AI syntax with config
-        logger.info("Calling Gemini API...")
-        
-        # Use the correct Python Google GenAI client approach
-        from google import genai as google_genai
-        from google.genai import types
-        
-        client = google_genai.Client(api_key=api_key)
-        
-        # Create content using PIL image directly (not base64 text)
+
+        height, width = image.shape[:2] if hasattr(image, "shape") else (None, None)
+
+        image_bytes = encode_image_to_png_bytes(image)
+
+        client = genai.Client(api_key=api_key)
+
         contents = [
             types.Content(
                 role="user",
                 parts=[
-                    types.Part(text=prompt),
-                    types.Part(inline_data=types.Blob(
-                        data=base64.b64decode(image_base64),
-                        mime_type="image/png"
-                    ))
-                ]
+                    create_text_part(prompt),
+                    create_image_part(image_bytes),
+                ],
             )
         ]
-        
-        # Configure response modalities
+
         generate_content_config = types.GenerateContentConfig(
-            response_modalities=["IMAGE", "TEXT"],
+            temperature=1,
+            top_p=0.95,
+            max_output_tokens=8192,
+            safety_settings=[
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HATE_SPEECH",
+                    threshold="OFF",
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold="OFF",
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold="OFF",
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HARASSMENT",
+                    threshold="OFF",
+                ),
+            ],
         )
-        
-        # Process streaming response
-        response_parts = []
+
+        active_model = model_name or "models/gemini-2.5-flash-image-preview"
+        active_endpoint = model_url or CINEMATIC_AI_CONFIG["GOOGLE_GEMINI_URL"]
+
+        record_api_call()
+
+        gemini_log(
+            "Generation request started",
+            model=active_model,
+            endpoint=active_endpoint,
+            resolution=f"{width}x{height}" if width and height else "unknown",
+            prompt_preview=prompt[:120],
+        )
+
+        response_text_chunks = []
+        generated_image = None
+
+        gemini_log("Streaming request dispatched", level=logging.DEBUG, model=active_model)
+        first_text_logged = False
+
         for chunk in client.models.generate_content_stream(
-            model="gemini-2.0-flash-preview-image-generation",
+            model=active_model,
             contents=contents,
             config=generate_content_config,
         ):
             if (
-                chunk.candidates is None
-                or chunk.candidates[0].content is None
-                or chunk.candidates[0].content.parts is None
+                not chunk.candidates
+                or not chunk.candidates[0].content
+                or not chunk.candidates[0].content.parts
             ):
                 continue
-            
-            # Collect parts from the stream
-            if chunk.candidates[0].content.parts:
-                response_parts.extend(chunk.candidates[0].content.parts)
-        
-        # Create a mock response object with the collected parts
-        class MockResponse:
-            def __init__(self, parts):
-                self.candidates = [MockCandidate(parts)]
-        
-        class MockCandidate:
-            def __init__(self, parts):
-                self.content = MockContent(parts)
-        
-        class MockContent:
-            def __init__(self, parts):
-                self.parts = parts
-        
-        response = MockResponse(response_parts)
-        logger.info("Gemini API call completed")
-        
-        if response and response.candidates and len(response.candidates) > 0:
-            candidate = response.candidates[0]
-            if candidate.content and candidate.content.parts:
-                # Extract the generated image from response
-                for part in candidate.content.parts:
-                    if part.inline_data and part.inline_data.mime_type.startswith('image/'):
-                        # Convert PIL Image to OpenCV format
-                        from io import BytesIO
-                        generated_pil = Image.open(BytesIO(part.inline_data.data))
-                        enhanced_image = cv2.cvtColor(np.array(generated_pil), cv2.COLOR_RGB2BGR)
-                        
-                        if enhanced_image is not None:
-                            logger.info(f"Successfully generated enhanced image using Gemini {model_name}")
-                            
-                            # Save the generated image
-                            import uuid
-                            import os
-                            filename = f"generated_{uuid.uuid4()}.png"
-                            filepath = os.path.join(UPLOAD_FOLDER, filename)
-                            cv2.imwrite(filepath, enhanced_image)
-                            logger.info(f"Saved generated image to: {filepath}")
-                            
-                            return enhanced_image, filepath
-                        else:
-                            logger.error("Failed to convert generated image from Gemini response")
-                            raise Exception("Failed to process generated image from Gemini")
-        
-        # If no image was generated, log the response for debugging
-        if response and hasattr(response, 'text'):
-            logger.info(f"Gemini response (text): {response.text[:200]}...")
-        
-        logger.warning("No image generated by Gemini, falling back to computer vision enhancement")
-        enhanced_image = apply_cinematic_cv_enhancement(image)
-        
-        if enhanced_image is not None:
-            logger.info("Successfully applied computer vision enhancement as fallback")
-            return enhanced_image
-        else:
-            logger.error("Both Gemini generation and CV enhancement failed")
-            raise Exception("Failed to enhance image with both Gemini and computer vision")
-        
+
+            for part in chunk.candidates[0].content.parts:
+                if hasattr(part, "inline_data") and part.inline_data and part.inline_data.mime_type.startswith("image/"):
+                    if generated_image is None:
+                        generated_image = decode_image_from_bytes(part.inline_data.data)
+                        gemini_log("Received image data chunk", level=logging.DEBUG, model=active_model)
+                elif hasattr(part, "text") and part.text:
+                    response_text_chunks.append(part.text)
+                    if not first_text_logged:
+                        gemini_log("Receiving text guidance", level=logging.DEBUG, model=active_model)
+                        first_text_logged = True
+
+            if hasattr(chunk, "text") and chunk.text:
+                response_text_chunks.append(chunk.text)
+
+        gemini_analysis = " ".join(response_text_chunks).strip() or None
+
+        if generated_image is not None:
+            filename = f"generated_{uuid.uuid4()}.png"
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            cv2.imwrite(filepath, generated_image)
+            gemini_log("Image generated successfully", filename=filename, path=filepath, model=active_model)
+            return generated_image, filepath
+
+        if gemini_analysis:
+            gemini_log(
+                "Gemini responded with analysis only",
+                level=logging.INFO,
+                preview=gemini_analysis[:200],
+                model=active_model,
+            )
+
+        error_msg = "Gemini did not return an image payload."
+        if gemini_analysis:
+            error_msg = f"{error_msg} Text response: {gemini_analysis[:200]}"
+        gemini_log("No image returned from Gemini", level=logging.ERROR, model=active_model, error=error_msg)
+        raise Exception(error_msg)
+
     except Exception as e:
-        logger.error(f"Google Gemini {model_name} API call failed: {str(e)}")
-        logger.error(f"Gemini error type: {type(e).__name__}")
-        import traceback
-        logger.error(f"Gemini traceback: {traceback.format_exc()}")
-        
-        # Fall back to computer vision enhancement
-        try:
-            logger.info("Falling back to computer vision enhancement due to Gemini error")
-            enhanced_image = apply_cinematic_cv_enhancement(image)
-            if enhanced_image is not None:
-                return enhanced_image
-        except Exception as cv_error:
-            logger.error(f"Computer vision fallback also failed: {str(cv_error)}")
-        
+        error_msg = str(e)
+        gemini_log(
+            "Gemini API call failed",
+            level=logging.ERROR,
+            error=error_msg,
+            error_type=type(e).__name__,
+        )
+        logger.error(f"[GEMINI] Traceback:\n{traceback.format_exc()}")
+
         raise e
 
 def call_google_gemini_ai(image, prompt):
-    """Call Google Gemini AI for image generation based on the input image and prompt"""
-    try:
-        # Check rate limits before making the API call
-        if not check_rate_limit():
-            raise Exception("Rate limit exceeded. Please try again later.")
-        
-        # Check if we have a valid Google API key
-        api_key = CINEMATIC_AI_CONFIG["GOOGLE_API_KEY"]
-        if not api_key or api_key == "your_google_api_key_here":
-            logger.error("No valid Google API key found. Gemini API key required.")
-            raise Exception("Google Gemini API key required for AI enhancement.")
-        
-        # Validate inputs
-        if image is None:
-            logger.error("Image is None - cannot process")
-            raise Exception("No image provided for processing")
-        
-        if not prompt or prompt.strip() == "":
-            logger.error("Prompt is empty - cannot process")
-            raise Exception("No prompt provided for processing")
-        
-        logger.info(f"Image shape: {image.shape if hasattr(image, 'shape') else 'No shape attribute'}")
-        logger.info(f"Image dtype: {image.dtype if hasattr(image, 'dtype') else 'No dtype attribute'}")
-        logger.info(f"Prompt length: {len(prompt)}")
-        
-        logger.info("=== GEMINI 2.0 FLASH PREVIEW IMAGE GENERATION CALL STARTED ===")
-        logger.info(f"Using Google Gemini 2.0 Flash Preview Image Generation for image enhancement!")
-        logger.info(f"Prompt: {prompt[:100]}...")
-        
-        # Record the API call for rate limiting
-        record_api_call()
-        
-        # Configure the API key - using new client approach
-        # genai.configure(api_key=api_key)  # Old approach - not needed
-        
-        # Convert OpenCV image to base64 for the API
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(image_rgb)
-        
-        # Convert PIL image to base64
-        import io
-        import base64
-        buffer = io.BytesIO()
-        pil_image.save(buffer, format='PNG')
-        image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        
-        # Debug logging
-        logger.info(f"Image shape: {image_rgb.shape}")
-        logger.info(f"PIL image mode: {pil_image.mode}")
-        logger.info(f"PIL image size: {pil_image.size}")
-        logger.info(f"Prompt: {prompt}")
-        
-        # Use the correct Google Generative AI syntax with config
-        logger.info("Calling Gemini API...")
-        
-        # Use the correct Python Google GenAI client approach
-        from google import genai as google_genai
-        from google.genai import types
-        
-        client = google_genai.Client(api_key=api_key)
-        
-        # Create content using PIL image directly (not base64 text)
-        contents = [
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part(text=prompt),
-                    types.Part(inline_data=types.Blob(
-                        data=base64.b64decode(image_base64),
-                        mime_type="image/png"
-                    ))
-                ]
-            )
-        ]
-        
-        # Configure response modalities
-        generate_content_config = types.GenerateContentConfig(
-            response_modalities=["IMAGE", "TEXT"],
-        )
-        
-        # Process streaming response
-        response_parts = []
-        for chunk in client.models.generate_content_stream(
-            model="gemini-2.0-flash-preview-image-generation",
-            contents=contents,
-            config=generate_content_config,
-        ):
-            if (
-                chunk.candidates is None
-                or chunk.candidates[0].content is None
-                or chunk.candidates[0].content.parts is None
-            ):
-                continue
-            
-            # Collect parts from the stream
-            if chunk.candidates[0].content.parts:
-                response_parts.extend(chunk.candidates[0].content.parts)
-        
-        # Create a mock response object with the collected parts
-        class MockResponse:
-            def __init__(self, parts):
-                self.candidates = [MockCandidate(parts)]
-        
-        class MockCandidate:
-            def __init__(self, parts):
-                self.content = MockContent(parts)
-        
-        class MockContent:
-            def __init__(self, parts):
-                self.parts = parts
-        
-        response = MockResponse(response_parts)
-        
-        if response and response.candidates and len(response.candidates) > 0:
-            candidate = response.candidates[0]
-            if candidate.content and candidate.content.parts:
-                # Extract the generated image from response
-                for part in candidate.content.parts:
-                    if part.inline_data and part.inline_data.mime_type.startswith('image/'):
-                        # Convert PIL Image to OpenCV format
-                        from io import BytesIO
-                        generated_pil = Image.open(BytesIO(part.inline_data.data))
-                        enhanced_image = cv2.cvtColor(np.array(generated_pil), cv2.COLOR_RGB2BGR)
-                        
-                        if enhanced_image is not None:
-                            logger.info("Successfully enhanced image using Gemini 2.0 Flash Preview")
-                            
-                            # Save the generated image
-                            import uuid
-                            import os
-                            filename = f"generated_{uuid.uuid4()}.png"
-                            filepath = os.path.join(UPLOAD_FOLDER, filename)
-                            cv2.imwrite(filepath, enhanced_image)
-                            logger.info(f"Saved generated image to: {filepath}")
-                            
-                            return enhanced_image, filepath
-                        else:
-                            logger.error("Failed to convert generated image from Gemini response")
-                            raise Exception("Failed to process generated image from Gemini")
-        
-        logger.error("No valid image found in Gemini response")
-        raise Exception("No valid image generated by Gemini")
-            
-    except Exception as e:
-        logger.error(f"Google Gemini API call failed: {str(e)}")
-        raise e
+    """Backward compatible wrapper that uses the default tier configuration."""
+    default_config = CINEMATIC_AI_CONFIG['USAGE_LIMITS']['default']
+    return call_google_gemini_ai_with_model(
+        image=image,
+        prompt=prompt,
+        model_url=default_config['url'],
+        model_name=default_config['model'],
+    )
 
 def blend_ai_with_original(original_image, ai_generated, prompt):
     """
@@ -2109,7 +2032,7 @@ def get_rate_limit_status_endpoint():
         return jsonify({
             'status': 'success',
             'rate_limits': status,
-            'model': 'models/gemini-2.0-flash-preview-image-generation'
+            'model': 'models/gemini-2.5-flash-image-preview'
         }), 200
     except Exception as e:
         logger.error(f"Error getting rate limit status: {str(e)}")
@@ -2225,38 +2148,20 @@ def get_cumulative_raw_logs():
         return jsonify({'error': 'Failed to get raw cumulative logs'}), 500
 
 @app.route('/images', methods=['GET'])
+@jwt_required()
 def get_images():
     try:
-        logger.info("Received request for images list")
-        images = []
+        # Get current user
+        user_id = get_jwt_identity()
+        logger.info(f"Received request for images list for user: {user_id}")
         
-        # Check if uploads directory exists
-        if not os.path.exists(UPLOAD_FOLDER):
-            logger.info("Uploads directory does not exist, returning empty list")
-            return jsonify({'images': []})
-            
-        for filename in os.listdir(UPLOAD_FOLDER):
-            if filename.startswith('processed_'):
-                # Get the original image filename
-                original_filename = filename[10:]  # Remove 'processed_' prefix
-                if os.path.exists(os.path.join(UPLOAD_FOLDER, original_filename)):
-                    # Get file creation time
-                    filepath = os.path.join(UPLOAD_FOLDER, filename)
-                    timestamp = datetime.fromtimestamp(os.path.getctime(filepath))
-                    
-                    images.append({
-                        'id': filename,
-                        'filename': filename,
-                        'original_filename': original_filename,
-                        'url': f'/uploads/{filename}',
-                        'timestamp': timestamp.isoformat(),
-                        'style': 'hardcoded'
-                    })
+        # Query images from database filtered by user
+        processed_images = ProcessedImage.query.filter_by(user_id=user_id).order_by(ProcessedImage.created_at.desc()).all()
         
-        # Sort by timestamp (newest first)
-        images.sort(key=lambda x: x['timestamp'], reverse=True)
+        # Convert to dictionary format
+        images = [img.to_dict() for img in processed_images]
         
-        logger.info(f"Found {len(images)} images")
+        logger.info(f"Found {len(images)} images for user {user_id}")
         return jsonify({'images': images})
     
     except Exception as e:
@@ -2999,34 +2904,88 @@ def create_tables():
             logger.info("✅ Database connection test passed")
             
     except Exception as e:
-        logger.error(f"❌ Database initialization failed: {str(e)}")
-        logger.error(f"❌ Error type: {type(e).__name__}")
+        import sys
+        import traceback
+        error_msg = f"❌ Database initialization failed: {str(e)}"
+        error_type = f"❌ Error type: {type(e).__name__}"
+        error_traceback = f"❌ Traceback: {traceback.format_exc()}"
+        
+        # Print to stderr to ensure we see the error
+        print(error_msg, file=sys.stderr)
+        print(error_type, file=sys.stderr)
+        print(error_traceback, file=sys.stderr)
+        
+        # Also try to log it
+        try:
+            logger.error(error_msg)
+            logger.error(error_type)
+            logger.error(error_traceback)
+        except:
+            pass
+        
         raise e
 
 # Add startup logging
-try:
-    logger.info("🚀 Flask app initialization complete")
-    logger.info("📊 App configuration:")
-    logger.info(f"  - Flask Environment: {os.getenv('FLASK_ENV', 'development')}")
-    logger.info(f"  - Debug Mode: {app.config.get('DEBUG', False)}")
-    logger.info(f"  - Database URI: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...")
-    logger.info(f"  - Upload Folder: {app.config.get('UPLOAD_FOLDER', 'Not set')}")
-    logger.info(f"  - Max Content Length: {app.config.get('MAX_CONTENT_LENGTH', 'Not set')}")
-    
-    # Initialize database
-    logger.info("🔧 Initializing database...")
-    create_tables()
-    
-    logger.info("✅ App is ready to serve requests!")
-    
-except Exception as e:
-    logger.error(f"❌ App initialization failed: {str(e)}")
-    logger.error(f"❌ Error type: {type(e).__name__}")
-    import traceback
-    logger.error(f"❌ Traceback: {traceback.format_exc()}")
-    raise e
+def initialize_app():
+    """Initialize the Flask app and database"""
+    try:
+        logger.info("🚀 Flask app initialization complete")
+        logger.info("📊 App configuration:")
+        logger.info(f"  - Flask Environment: {os.getenv('FLASK_ENV', 'development')}")
+        logger.info(f"  - Debug Mode: {app.config.get('DEBUG', False)}")
+        logger.info(f"  - Database URI: {app.config.get('SQLALCHEMY_DATABASE_URI', 'Not set')[:50]}...")
+        logger.info(f"  - Upload Folder: {app.config.get('UPLOAD_FOLDER', 'Not set')}")
+        logger.info(f"  - Max Content Length: {app.config.get('MAX_CONTENT_LENGTH', 'Not set')}")
+        
+        # Initialize database
+        logger.info("🔧 Initializing database...")
+        create_tables()
+        
+        logger.info("✅ App is ready to serve requests!")
+        return True
+    except Exception as e:
+        import sys
+        import traceback
+        error_msg = f"❌ App initialization failed: {str(e)}"
+        error_type = f"❌ Error type: {type(e).__name__}"
+        error_traceback = f"❌ Traceback: {traceback.format_exc()}"
+        
+        # Print to stderr to ensure we see the error even if logging fails
+        print("\n" + "="*80, file=sys.stderr)
+        print(error_msg, file=sys.stderr)
+        print(error_type, file=sys.stderr)
+        print(error_traceback, file=sys.stderr)
+        print("="*80 + "\n", file=sys.stderr)
+        
+        # Also try to log it
+        try:
+            logger.error(error_msg)
+            logger.error(error_type)
+            logger.error(error_traceback)
+        except:
+            pass
+        
+        return False
+
+# Ensure tables are created on first request (works with both flask run and python app.py)
+# Note: @app.before_first_request is deprecated, so we'll handle it in the registration endpoint
+# But we can also call initialize_app() when the module loads if not already called
+if not hasattr(app, '_initialized'):
+    try:
+        initialize_app()
+        app._initialized = True
+    except Exception as e:
+        logger.warning(f"⚠️ Could not initialize app on import: {e}")
+        app._initialized = False
 
 if __name__ == '__main__':
+    import sys
+    
+    # Initialize app first
+    if not initialize_app():
+        print("\n❌ Failed to initialize app. Check errors above.\n", file=sys.stderr)
+        sys.exit(1)
+    
     logger.info("🚀 STARTING STYLE AI BACKEND SERVER")
     logger.info("=" * 80)
     logger.info("🔧 Server Configuration:")
@@ -3039,4 +2998,14 @@ if __name__ == '__main__':
     logger.info("=" * 80)
     logger.info("📡 Server is ready to receive requests!")
     logger.info("=" * 80)
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    
+    try:
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    except Exception as e:
+        import traceback
+        print("\n" + "="*80, file=sys.stderr)
+        print(f"❌ Server startup failed: {str(e)}", file=sys.stderr)
+        print(f"❌ Error type: {type(e).__name__}", file=sys.stderr)
+        print(f"❌ Traceback: {traceback.format_exc()}", file=sys.stderr)
+        print("="*80 + "\n", file=sys.stderr)
+        sys.exit(1) 

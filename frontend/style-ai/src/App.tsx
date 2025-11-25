@@ -13,12 +13,11 @@ import {
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { camera, image } from 'ionicons/icons';
+import { camera } from 'ionicons/icons';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import CameraPage from './pages/CameraPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import GalleryPage from './pages/GalleryPage';
 import PaymentPage from './pages/PaymentPage';
 import StripePaymentPage from './pages/StripePaymentPage';
 import ApiDebugPage from './pages/ApiDebugPage';
@@ -106,7 +105,7 @@ const AppWithTabs: React.FC = () => {
   const hideTabs = location.pathname === '/payment' || location.pathname === '/stripe-payment';
 
   // Redirect unauthenticated users to login
-  if (!isAuthenticated && (location.pathname === '/' || location.pathname === '/camera' || location.pathname === '/gallery')) {
+  if (!isAuthenticated && (location.pathname === '/' || location.pathname === '/camera')) {
     return <Redirect to="/login" />;
   }
 
@@ -117,11 +116,6 @@ const AppWithTabs: React.FC = () => {
         <Route exact path="/camera">
           <ProtectedRoute>
             <CameraPage />
-          </ProtectedRoute>
-        </Route>
-        <Route exact path="/gallery">
-          <ProtectedRoute>
-            <GalleryPage />
           </ProtectedRoute>
         </Route>
         <Route exact path="/login">
@@ -153,18 +147,6 @@ const AppWithTabs: React.FC = () => {
           <Redirect to="/camera" />
         </Route>
       </IonRouterOutlet>
-      {!hideTabs && isAuthenticated && (
-        <IonTabBar slot="bottom" className="modern-tab-bar">
-          <IonTabButton tab="camera" href="/camera">
-            <IonIcon icon={camera} />
-            <IonLabel>Camera</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="gallery" href="/gallery">
-            <IonIcon icon={image} />
-            <IonLabel>Gallery</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      )}
     </IonTabs>
   );
 };

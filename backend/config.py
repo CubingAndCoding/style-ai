@@ -11,8 +11,8 @@ AI_CONFIG = {
     "HUGGINGFACE_API_URL": "https://api-inference.huggingface.co",
     
     # Google Gemini API (for amazing cinematic enhancement)
-    "GOOGLE_API_KEY": os.getenv("GOOGLE_API_KEY", ""),
-    "GOOGLE_GEMINI_URL": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent",
+    "GOOGLE_API_KEY": os.getenv("GOOGLE_CLOUD_API_KEY") or os.getenv("GOOGLE_API_KEY", ""),
+    "GOOGLE_GEMINI_URL": "https://generativelanguage.googleapis.com/v1beta/models/models/gemini-2.5-flash-image-preview:generateContent",
     
     # OpenAI API (alternative AI service)
     "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", ""),
