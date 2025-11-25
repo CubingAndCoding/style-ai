@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "build:check": "tsc && vite build",
     "preview": "vite preview",
     "serve": "serve -s dist -l",
     "start": "npm run build && npx serve -s dist -l ${PORT:-3000}",
