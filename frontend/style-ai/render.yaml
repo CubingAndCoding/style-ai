@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: style-ai-frontend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s dist -l $PORT
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_URL
+        value: https://style-ai-backend.onrender.com
+      - key: VITE_APP_NAME
+        value: Style AI
+      - key: VITE_APP_VERSION
+        value: 0.0.1
+      - key: VITE_DEBUG_MODE
+        value: "false"
+      - key: VITE_ENABLE_CONSOLE_LOGS
+        value: "false"
+

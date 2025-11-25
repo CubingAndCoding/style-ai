@@ -35,9 +35,9 @@ RUN npm install -g serve
 # Remove dev dependencies to reduce image size
 RUN npm prune --omit=dev
 
-# Expose port (Railway will set PORT environment variable)
-EXPOSE 3000
+# Expose port (Render will set PORT environment variable)
+EXPOSE $PORT
 
-# Start the application
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Start the application (use PORT from environment, default to 3000)
+CMD sh -c "npx serve -s dist -l ${PORT:-3000}"
 
