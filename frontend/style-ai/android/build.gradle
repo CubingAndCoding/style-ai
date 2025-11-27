@@ -23,24 +23,23 @@ allprojects {
         mavenCentral()
     }
     
-    // Force Java 17 for all modules
-    tasks.withType(JavaCompile) {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-        options.compilerArgs += ['--release', '17']
-    }
-    
-    // Override Java version for all subprojects
-    subprojects {
-        afterEvaluate { project ->
-            if (project.hasProperty('android')) {
-                project.android {
-                    compileOptions {
-                        sourceCompatibility JavaVersion.VERSION_17
-                        targetCompatibility JavaVersion.VERSION_17
-                    }
+    // Force Java 21 for all modules to match Capacitor plugins
+    afterEvaluate { project ->
+        // For Android projects
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_21
+                    targetCompatibility JavaVersion.VERSION_21
                 }
             }
+        }
+        
+        // For Java compilation tasks
+        project.tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+            options.compilerArgs += ['--release', '21']
         }
     }
 }

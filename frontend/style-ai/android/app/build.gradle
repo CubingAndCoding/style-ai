@@ -3,6 +3,12 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.styleai.app"
     compileSdk rootProject.ext.compileSdkVersion
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    
     defaultConfig {
         applicationId "com.styleai.app"
         minSdkVersion rootProject.ext.minSdkVersion

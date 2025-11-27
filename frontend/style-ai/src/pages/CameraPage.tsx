@@ -40,6 +40,9 @@ import {
   personAddOutline
 } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { useHistory, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -194,24 +197,88 @@ const CameraPage: React.FC = () => {
     }
 
     try {
-      // Fetch the image as a blob
-      const response = await axios.get(processedImage, { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'image/jpeg' });
-      const url = window.URL.createObjectURL(blob);
+      // Check if we're on a native platform (Android/iOS)
+      const isNative = Capacitor.isNativePlatform();
       
-      // Create a download link
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `enhanced-image-${Date.now()}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-      showToastMessage('Image saved to your device!', 'success');
-    } catch (error) {
+      if (isNative) {
+        // Fetch the image
+        const response = await axios.get(processedImage, { responseType: 'blob' });
+        const blob = await response.data;
+        
+        // Convert blob to base64
+        const reader = new FileReader();
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => {
+            const base64String = reader.result as string;
+            // Remove data URL prefix if present
+            const base64 = base64String.includes(',') 
+              ? base64String.split(',')[1] 
+              : base64String;
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+        // Generate filename
+        const filename = `StyleAI_${Date.now()}.jpg`;
+        
+        try {
+          // Try to save to Pictures directory (Android) or Photos (iOS)
+          // This should work with the permissions we've added
+          await Filesystem.writeFile({
+            path: filename,
+            data: base64Data,
+            directory: Directory.Pictures,
+          });
+          
+          showToastMessage('Image saved to your gallery!', 'success');
+        } catch (filesystemError: any) {
+          // If saving to Pictures fails, try using Share API as fallback
+          console.log('Direct save failed, using Share API:', filesystemError);
+          
+          // Save to cache first
+          const cacheFile = await Filesystem.writeFile({
+            path: filename,
+            data: base64Data,
+            directory: Directory.Cache,
+          });
+          
+          // Share the file - user can choose to save to gallery
+          await Share.share({
+            title: 'Save Enhanced Image',
+            text: 'Save this enhanced image to your gallery',
+            url: cacheFile.uri,
+            dialogTitle: 'Save to Gallery',
+          });
+          
+          showToastMessage('Use the share menu to save to gallery', 'success');
+        }
+      } else {
+        // For web platforms, use the download approach
+        const response = await axios.get(processedImage, { responseType: 'blob' });
+        const blob = new Blob([response.data], { type: 'image/jpeg' });
+        const url = window.URL.createObjectURL(blob);
+        
+        // Create a download link
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `enhanced-image-${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showToastMessage('Image saved to your device!', 'success');
+      }
+    } catch (error: any) {
       console.error('Error saving image:', error);
-      showToastMessage('Failed to save image', 'danger');
+      const errorMessage = error?.message || 'Failed to save image';
+      if (errorMessage.includes('permission') || errorMessage.includes('Permission')) {
+        showToastMessage('Permission denied. Please grant storage permission in app settings.', 'danger');
+      } else {
+        showToastMessage('Failed to save image. Please try again.', 'danger');
+      }
     }
   };
 
