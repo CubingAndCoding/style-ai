@@ -45,6 +45,7 @@ import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { useHistory, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { compressImage, getImageSizeKB } from '../utils/imageCompression';
 import './CameraPage.css';
 
 const CameraPage: React.FC = () => {
@@ -88,15 +89,32 @@ const CameraPage: React.FC = () => {
       }
 
       const image = await Camera.getPhoto({
-        quality: 90,
+        quality: 75, // Reduced from 90 to save memory
         allowEditing: false,
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
       });
 
       if (image.base64String) {
-        setSelectedImage(`data:image/jpeg;base64,${image.base64String}`);
+        // Show loading while compressing
+        showToastMessage('Compressing image...', 'success');
+        
+        // Compress image before setting it to reduce memory usage
+        const compressedImage = await compressImage(
+          `data:image/jpeg;base64,${image.base64String}`,
+          {
+            maxWidth: 1920,
+            maxHeight: 1920,
+            quality: 0.75,
+            maxSizeKB: 500, // Target max 500KB to reduce server memory usage
+          }
+        );
+        setSelectedImage(compressedImage);
         setProcessedImage(null);
+        
+        const sizeKB = getImageSizeKB(compressedImage);
+        const originalSizeKB = getImageSizeKB(`data:image/jpeg;base64,${image.base64String}`);
+        console.log(`Image compressed from ${originalSizeKB.toFixed(2)} KB to ${sizeKB.toFixed(2)} KB (${((1 - sizeKB/originalSizeKB) * 100).toFixed(1)}% reduction)`);
       }
     } catch (error: any) {
       // Don't show error if user cancelled
@@ -122,15 +140,32 @@ const CameraPage: React.FC = () => {
       }
 
       const image = await Camera.getPhoto({
-        quality: 90,
+        quality: 75, // Reduced from 90 to save memory
         allowEditing: false,
         resultType: CameraResultType.Base64,
         source: CameraSource.Photos,
       });
 
       if (image.base64String) {
-        setSelectedImage(`data:image/jpeg;base64,${image.base64String}`);
+        // Show loading while compressing
+        showToastMessage('Compressing image...', 'success');
+        
+        // Compress image before setting it to reduce memory usage
+        const compressedImage = await compressImage(
+          `data:image/jpeg;base64,${image.base64String}`,
+          {
+            maxWidth: 1920,
+            maxHeight: 1920,
+            quality: 0.75,
+            maxSizeKB: 500, // Target max 500KB to reduce server memory usage
+          }
+        );
+        setSelectedImage(compressedImage);
         setProcessedImage(null);
+        
+        const sizeKB = getImageSizeKB(compressedImage);
+        const originalSizeKB = getImageSizeKB(`data:image/jpeg;base64,${image.base64String}`);
+        console.log(`Image compressed from ${originalSizeKB.toFixed(2)} KB to ${sizeKB.toFixed(2)} KB (${((1 - sizeKB/originalSizeKB) * 100).toFixed(1)}% reduction)`);
       }
     } catch (error: any) {
       // Don't show error if user cancelled
@@ -156,7 +191,17 @@ const CameraPage: React.FC = () => {
         image: selectedImage,
       };
 
-      const response = await axios.post(`${API_URL}/upload`, payload);
+      // Configure axios with timeout and proper headers for iOS
+      const response = await axios.post(`${API_URL}/upload`, payload, {
+        timeout: 60000, // 60 seconds timeout for large image uploads
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+      });
       
       if (response.data.url) {
         const processedImageUrl = `${API_URL}${response.data.url}`;
@@ -169,11 +214,20 @@ const CameraPage: React.FC = () => {
     } catch (error: any) {
       console.error('Error uploading image:', error);
       
-      // Handle premium restriction error
-      if (error.response?.status === 403 && error.response?.data?.premium_required) {
+      // Handle network errors specifically
+      if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
+        showToastMessage('Network error: Please check your internet connection and try again', 'danger');
+      } else if (error.response?.status === 403 && error.response?.data?.premium_required) {
+        // Handle premium restriction error
         showToastMessage('Custom prompts are a premium feature. Please upgrade to use custom enhancement prompts.', 'danger');
+      } else if (error.response) {
+        // Server responded with error
+        const errorMsg = error.response.data?.error || error.response.data?.message || 'Server error';
+        showToastMessage(`Failed to enhance image: ${errorMsg}`, 'danger');
       } else {
-        showToastMessage('Failed to enhance image', 'danger');
+        // Network or other error
+        const errorMsg = error.message || 'Unknown error';
+        showToastMessage(`Failed to enhance image: ${errorMsg}`, 'danger');
       }
     } finally {
       setLoading(false);
