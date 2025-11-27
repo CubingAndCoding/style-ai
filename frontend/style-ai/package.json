@@ -16,7 +16,11 @@
     "cap:add:android": "npx cap add android",
     "cap:build:android": "npm run build && npx cap sync android",
     "cap:open:android": "npx cap open android",
-    "cap:run:android": "npx cap run android"
+    "cap:run:android": "npx cap run android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:build:ios": "npm run build && npx cap sync ios",
+    "cap:open:ios": "npx cap open ios",
+    "cap:run:ios": "npx cap run ios"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",

@@ -33,7 +33,6 @@ import {
   cameraOutline, 
   sparklesOutline, 
   saveOutline,
-  personOutline,
   logOutOutline,
   warningOutline,
   logInOutline,
@@ -327,9 +326,6 @@ const CameraPage: React.FC = () => {
                   ) : null}
                 </div>
                 
-                <IonButton onClick={() => history.push('/saved-prompts')}>
-                  <IonIcon icon={personOutline} />
-                </IonButton>
                 <IonButton onClick={handleLogout}>
                   <IonIcon icon={logOutOutline} />
                 </IonButton>

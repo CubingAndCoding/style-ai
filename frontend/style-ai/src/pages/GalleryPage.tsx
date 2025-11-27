@@ -217,9 +217,6 @@ const GalleryPage: React.FC = () => {
           <IonButtons slot="end">
             {isAuthenticated ? (
               <>
-                <IonButton onClick={() => history.push('/saved-prompts')}>
-                  <IonIcon icon={personOutline} />
-                </IonButton>
                 <IonButton onClick={handleLogout}>
                   <IonIcon icon={logOutOutline} />
                 </IonButton>
