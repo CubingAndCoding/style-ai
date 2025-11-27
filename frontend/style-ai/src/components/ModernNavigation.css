@@ -33,15 +33,46 @@
   padding: var(--space-sm) var(--space-lg);
 }
 
+/* Fix iOS title centering issue - prevent title from centering when there are end buttons */
 .modern-header ion-title {
   font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--text-primary) !important;
   letter-spacing: -0.025em;
+  text-align: left !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: auto !important;
+  width: auto !important;
+  padding-left: 16px;
+  padding-right: 16px;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+/* Reserve space for end buttons to prevent overlap */
+.modern-header ion-toolbar:has(ion-buttons[slot="end"]) ion-title {
+  max-width: calc(100% - 250px); /* Reserve space for credits button and logout button */
+}
+
+/* Ensure end buttons stay on the right and don't overlap */
+.modern-header ion-buttons[slot="end"] {
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .modern-header ion-buttons {
   gap: var(--space-sm);
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+/* Ensure credits container doesn't cause layout issues */
+.modern-header .credits-purchase-container {
+  flex-shrink: 0;
+  min-width: fit-content;
 }
 
 .modern-header ion-button {
@@ -264,6 +295,11 @@
     --padding-end: var(--space-sm);
   }
   
+  /* On smaller screens, reduce reserved space for title */
+  .modern-header ion-toolbar:has(ion-buttons[slot="end"]) ion-title {
+    max-width: calc(100% - 200px);
+  }
+  
   .modern-tab-bar {
     height: 60px;
   }
@@ -282,5 +318,27 @@
   .modern-tab-bar ion-label {
     font-size: 0.6rem;
     line-height: 1.0;
+  }
+}
+
+/* iOS-specific fixes for header layout */
+@supports (-webkit-touch-callout: none) {
+  /* This targets iOS Safari */
+  .modern-header ion-title {
+    position: absolute !important;
+    left: 0 !important;
+    right: auto !important;
+    transform: none !important;
+    text-align: left !important;
+  }
+  
+  .modern-header ion-toolbar:has(ion-buttons[slot="end"]) ion-title {
+    max-width: calc(100% - 250px);
+    padding-right: 8px;
+  }
+  
+  .modern-header ion-buttons[slot="end"] {
+    position: relative;
+    z-index: 10;
   }
 }

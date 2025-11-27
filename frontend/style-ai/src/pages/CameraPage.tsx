@@ -77,6 +77,16 @@ const CameraPage: React.FC = () => {
 
   const takePicture = async () => {
     try {
+      // Check if camera is available
+      const hasPermission = await Camera.checkPermissions();
+      if (hasPermission.camera === 'denied' || hasPermission.camera === 'prompt') {
+        const requestResult = await Camera.requestPermissions();
+        if (requestResult.camera !== 'granted') {
+          showToastMessage('Camera permission is required to take photos', 'danger');
+          return;
+        }
+      }
+
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
@@ -88,14 +98,29 @@ const CameraPage: React.FC = () => {
         setSelectedImage(`data:image/jpeg;base64,${image.base64String}`);
         setProcessedImage(null);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show error if user cancelled
+      if (error?.message?.includes('cancel') || error?.message?.includes('Cancel')) {
+        return;
+      }
       console.error('Error taking picture:', error);
-      showToastMessage('Failed to take picture', 'danger');
+      const errorMessage = error?.message || 'Unknown error';
+      showToastMessage(`Failed to take picture: ${errorMessage}`, 'danger');
     }
   };
 
   const selectFromGallery = async () => {
     try {
+      // Check if photo library permission is available
+      const hasPermission = await Camera.checkPermissions();
+      if (hasPermission.photos === 'denied' || hasPermission.photos === 'prompt') {
+        const requestResult = await Camera.requestPermissions();
+        if (requestResult.photos !== 'granted') {
+          showToastMessage('Photo library permission is required to select images', 'danger');
+          return;
+        }
+      }
+
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
@@ -107,9 +132,15 @@ const CameraPage: React.FC = () => {
         setSelectedImage(`data:image/jpeg;base64,${image.base64String}`);
         setProcessedImage(null);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show error if user cancelled
+      if (error?.message?.includes('cancel') || error?.message?.includes('Cancel') || error?.code === 'USER_CANCELED') {
+        return;
+      }
       console.error('Error selecting from gallery:', error);
-      showToastMessage('Failed to select image from gallery', 'danger');
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      console.error('Full error details:', error);
+      showToastMessage(`Failed to select image: ${errorMessage}`, 'danger');
     }
   };
 
@@ -294,6 +325,9 @@ const CameraPage: React.FC = () => {
     <IonPage>
       <IonHeader className="modern-header">
         <IonToolbar>
+          <IonButtons slot="start">
+            {/* Empty start slot to prevent title from centering on iOS */}
+          </IonButtons>
           <IonTitle>
             Style AI
           </IonTitle>

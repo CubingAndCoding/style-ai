@@ -45,5 +45,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Style AI needs access to your camera to take photos for AI enhancement.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Style AI needs access to your photo library to select images for AI enhancement.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Style AI needs access to save enhanced images to your photo library.</string>
 </dict>
 </plist>
